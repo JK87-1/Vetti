@@ -459,6 +459,137 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
   opacity:0;transition:all .22s;z-index:999;pointer-events:none;
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ══════════ CONCIERGE (AI 상담) ══════════ */
+.cc-fab{
+  position:fixed;right:18px;bottom:22px;z-index:990;
+  background:#FFFFFF;color:var(--black);
+  border:1px solid #E8E4DE;border-radius:999px;
+  padding:10px 18px 10px 14px;
+  font-size:12px;font-weight:700;letter-spacing:.08em;
+  display:flex;align-items:center;gap:9px;
+  cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.12);
+  transition:transform .18s, box-shadow .18s;
+}
+.cc-fab:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.16);}
+.cc-fab-mark{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--black);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;letter-spacing:.02em;
+}
+.cc-fab-caret{font-size:9px;opacity:.55;margin-left:2px;}
+
+.cc-panel{
+  position:fixed;right:18px;bottom:22px;z-index:995;
+  width:min(380px, calc(100vw - 28px));
+  height:min(620px, calc(100vh - 60px));
+  background:#FFFFFF;border:1px solid #E8E4DE;
+  border-radius:14px;overflow:hidden;
+  box-shadow:0 24px 60px rgba(0,0,0,.22);
+  display:none;flex-direction:column;
+}
+.cc-panel.on{display:flex;}
+
+.cc-head{
+  padding:16px 16px 14px;border-bottom:1px solid #F0ECE6;
+  display:flex;align-items:center;gap:12px;
+  background:#FFFFFF;
+}
+.cc-head-mark{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--black);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;letter-spacing:.02em;
+}
+.cc-head-txt{flex:1;}
+.cc-head-title{
+  font-size:12px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--black);
+}
+.cc-head-sub{font-size:10px;color:var(--gray3);margin-top:2px;letter-spacing:.04em;}
+.cc-head-close{
+  background:none;border:0;font-size:16px;color:var(--gray2);
+  cursor:pointer;padding:4px 6px;line-height:1;
+}
+
+.cc-body{
+  flex:1;overflow-y:auto;padding:18px 16px;
+  background:#FCFAF7;
+  display:flex;flex-direction:column;gap:14px;
+}
+.cc-msg{display:flex;gap:10px;align-items:flex-start;}
+.cc-msg.me{justify-content:flex-end;}
+.cc-avatar{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--black);color:#fff;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;letter-spacing:.02em;
+}
+.cc-bubble-wrap{max-width:78%;display:flex;flex-direction:column;gap:4px;}
+.cc-msg.me .cc-bubble-wrap{align-items:flex-end;}
+.cc-name{
+  font-size:10px;color:var(--gray3);letter-spacing:.06em;
+  padding:0 2px;font-weight:600;
+}
+.cc-bubble{
+  background:#FFFFFF;color:var(--black);
+  border:1px solid #EDE9E2;
+  border-radius:12px;padding:10px 13px;
+  font-size:13px;line-height:1.55;
+  word-break:break-word;white-space:pre-wrap;
+}
+.cc-msg.me .cc-bubble{
+  background:var(--black);color:#fff;border-color:var(--black);
+}
+.cc-time{font-size:9px;color:var(--gray3);padding:0 2px;}
+
+.cc-typing{display:flex;gap:4px;padding:6px 2px;}
+.cc-typing span{
+  width:6px;height:6px;border-radius:50%;background:var(--gray3);
+  animation:ccblink 1.2s infinite ease-in-out;
+}
+.cc-typing span:nth-child(2){animation-delay:.18s;}
+.cc-typing span:nth-child(3){animation-delay:.36s;}
+@keyframes ccblink{0%,80%,100%{opacity:.25;}40%{opacity:1;}}
+
+.cc-suggest{
+  display:flex;flex-wrap:wrap;gap:6px;padding:0 6px 4px;
+}
+.cc-chip{
+  background:#FFFFFF;border:1px solid #E0DAD0;
+  color:var(--black);font-size:11px;font-weight:600;
+  padding:7px 12px;border-radius:999px;cursor:pointer;
+  transition:all .15s;letter-spacing:.02em;
+}
+.cc-chip:hover{background:var(--black);color:#fff;border-color:var(--black);}
+
+.cc-cta{
+  margin:2px 6px 0;background:var(--black);color:#fff;
+  border:0;border-radius:8px;padding:12px 14px;
+  font-size:12px;font-weight:700;letter-spacing:.08em;
+  cursor:pointer;text-transform:uppercase;
+}
+.cc-cta:hover{opacity:.88;}
+
+.cc-foot{
+  border-top:1px solid #F0ECE6;padding:10px 12px;
+  background:#FFFFFF;display:flex;gap:8px;align-items:flex-end;
+}
+.cc-input{
+  flex:1;border:1px solid #E8E4DE;border-radius:20px;
+  padding:10px 14px;font-size:13px;font-family:inherit;
+  resize:none;max-height:90px;min-height:38px;line-height:1.4;
+  background:#FAFAF8;color:var(--black);outline:none;
+}
+.cc-input:focus{border-color:var(--black);background:#fff;}
+.cc-send{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--black);color:#fff;border:0;
+  font-size:14px;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.cc-send:disabled{opacity:.35;cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -1917,11 +2048,234 @@ function toggleProc(){
   }
 }
 
+// ── CONCIERGE (AI 상담) ───────────────────────────────
+const CC_HISTORY_KEY='vetti_cc_history_v1';
+const CC_SYSTEM=`당신은 VETTI의 수석 큐레이터 "베티"입니다. VETTI는 악어/리자드/오스트리치 가죽 기반 프리미엄 맞춤 가방 브랜드입니다.
+
+[대화 규칙]
+- 고객에게 반말하지 말고, 정중하고 우아한 존댓말 사용 (에르메스·루이비통 매장 톤)
+- 짧고 간결하게 (2~4문장). 과도한 이모지 금지.
+- 한 번에 한 가지만 질문. 쏟아붓지 말 것.
+
+[수집 정보 순서]
+1. 사용 상황 (일상/특별한 자리/선물 등)
+2. 선호 스타일 (클래식/모던/미니멀 등)
+3. 예산 감도 (선택사항, 자연스럽게)
+4. 참고 이미지 유무 (없어도 OK)
+
+[추천 가능 옵션]
+- 재질: 크로커다일(Base), 리자드(+90만원), 오스트리치(+60만원)
+- 색상: Black / Burgundy / Navy / Camel / Ivory / Forest / Rose
+- 하드웨어: Gold / Silver
+- 사이즈: Mini / Medium / Large
+
+[추천 확정 시]
+필요한 정보가 충분히 모이면, 반드시 다음과 같은 JSON 블록으로 추천을 마무리하세요:
+
+\`\`\`vetti-recommend
+{"mat":"croc|lizard|ostrich","col":"black|burgundy|navy|camel|ivory|forest|rose","hw":"gold|silver","sz":"mini|medium|large","reason":"한 줄 이유"}
+\`\`\`
+
+JSON 앞뒤로 자연스러운 추천 멘트 한두 문장을 곁들이세요. JSON은 시스템이 파싱해 "시각화하기" 버튼을 띄우는 용도입니다.`;
+
+let CC_MSGS=[]; // [{role, content}]
+let CC_BUSY=false;
+
+function ccLoadHistory(){
+  try{
+    const raw=localStorage.getItem(CC_HISTORY_KEY);
+    if(raw) CC_MSGS=JSON.parse(raw)||[];
+  }catch(e){CC_MSGS=[];}
+}
+function ccSaveHistory(){
+  try{localStorage.setItem(CC_HISTORY_KEY,JSON.stringify(CC_MSGS.slice(-30)));}catch(e){}
+}
+function ccTime(){
+  const d=new Date();
+  return d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function ccRenderMessage(m,opts){
+  opts=opts||{};
+  const body=document.getElementById('cc-body');
+  const isMe=m.role==='user';
+  const wrap=document.createElement('div');
+  wrap.className='cc-msg '+(isMe?'me':'');
+  const html=[];
+  if(!isMe) html.push(`<div class="cc-avatar">V</div>`);
+  html.push(`<div class="cc-bubble-wrap">`);
+  if(!isMe) html.push(`<div class="cc-name">베티 · VETTI</div>`);
+  const txt=ccStripJSON(m.content);
+  html.push(`<div class="cc-bubble">${ccEscape(txt)}</div>`);
+  html.push(`<div class="cc-time">${m.t||ccTime()}</div>`);
+  html.push(`</div>`);
+  wrap.innerHTML=html.join('');
+  body.appendChild(wrap);
+  // If recommendation JSON found, inject CTA
+  const rec=ccParseJSON(m.content);
+  if(rec && !isMe){
+    const cta=document.createElement('button');
+    cta.className='cc-cta';
+    cta.textContent='이 조합으로 시각화하기 →';
+    cta.onclick=()=>ccApplyRecommend(rec);
+    body.appendChild(cta);
+  }
+  body.scrollTop=body.scrollHeight;
+}
+function ccEscape(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function ccStripJSON(s){return (s||'').replace(/```vetti-recommend[\s\S]*?```/g,'').trim();}
+function ccParseJSON(s){
+  const m=(s||'').match(/```vetti-recommend\s*([\s\S]*?)```/);
+  if(!m) return null;
+  try{return JSON.parse(m[1]);}catch(e){return null;}
+}
+function ccApplyRecommend(rec){
+  const matMap={croc:'croc',lizard:'lizard',ostrich:'ostrich'};
+  const mat=matMap[rec.mat]||'croc';
+  const col=rec.col||'black';
+  const hw=rec.hw||'gold';
+  const sz=rec.sz||'medium';
+  if(MATS.find(m=>m.id===mat)) S.mat=mat;
+  if(COLS.find(c=>c.id===col)) S.col=col;
+  if(HWS.find(h=>h.id===hw)) S.hw=hw;
+  if(SZS.find(s=>s.id===sz)) S.sz=sz;
+  ccToggle(false);
+  go('s-step1');
+  toast('추천 옵션이 적용되었습니다');
+}
+function ccShowTyping(){
+  const body=document.getElementById('cc-body');
+  const el=document.createElement('div');
+  el.className='cc-msg';el.id='cc-typing-row';
+  el.innerHTML=`<div class="cc-avatar">V</div><div class="cc-bubble-wrap"><div class="cc-name">베티 · VETTI</div><div class="cc-bubble"><div class="cc-typing"><span></span><span></span><span></span></div></div></div>`;
+  body.appendChild(el);body.scrollTop=body.scrollHeight;
+}
+function ccHideTyping(){
+  const el=document.getElementById('cc-typing-row');
+  if(el) el.remove();
+}
+function ccGreet(){
+  const body=document.getElementById('cc-body');
+  body.innerHTML='';
+  const welcome={role:'assistant',content:'안녕하세요, VETTI 베티입니다.\n오늘은 어떤 제품을 찾고 계신지 편하게 말씀해 주세요. 일상에서 쓰실 건지, 특별한 자리를 위한 건지부터 여쭤봐도 될까요?',t:ccTime()};
+  ccRenderMessage(welcome);
+  // Quick replies
+  const chipRow=document.createElement('div');
+  chipRow.className='cc-suggest';
+  ['일상용 가방 추천','선물용 가방','특별한 자리용','추천받지 말고 바로 선택'].forEach(txt=>{
+    const b=document.createElement('button');
+    b.className='cc-chip';b.textContent=txt;
+    b.onclick=()=>{
+      if(txt==='추천받지 말고 바로 선택'){ccToggle(false);go('s-step1');return;}
+      document.getElementById('cc-input').value=txt;ccSend();
+    };
+    chipRow.appendChild(b);
+  });
+  body.appendChild(chipRow);
+}
+function ccToggle(force){
+  const p=document.getElementById('cc-panel');
+  const f=document.getElementById('cc-fab');
+  const show=typeof force==='boolean'?force:!p.classList.contains('on');
+  p.classList.toggle('on',show);
+  f.style.display=show?'none':'flex';
+  if(show && !CC_MSGS.length) ccGreet();
+  if(show) setTimeout(()=>document.getElementById('cc-input').focus(),120);
+}
+async function ccSend(){
+  if(CC_BUSY) return;
+  const inp=document.getElementById('cc-input');
+  const txt=inp.value.trim();
+  if(!txt) return;
+  inp.value='';inp.style.height='auto';
+  const userMsg={role:'user',content:txt,t:ccTime()};
+  CC_MSGS.push(userMsg);
+  ccRenderMessage(userMsg);
+  // remove any lingering chip rows
+  document.querySelectorAll('#cc-body .cc-suggest').forEach(e=>e.remove());
+  ccSaveHistory();
+
+  const key=getOpenAIKey();
+  if(!key){
+    const fb={role:'assistant',content:'⚙ 버튼을 눌러 OpenAI API 키를 먼저 설정해 주세요. (결과 화면 상단 우측)',t:ccTime()};
+    CC_MSGS.push(fb);ccRenderMessage(fb);ccSaveHistory();return;
+  }
+
+  CC_BUSY=true;
+  document.getElementById('cc-send').disabled=true;
+  ccShowTyping();
+  try{
+    const messages=[{role:'system',content:CC_SYSTEM}].concat(
+      CC_MSGS.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role,content:m.content}))
+    );
+    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:'gpt-4o-mini',messages,temperature:0.7})
+    });
+    ccHideTyping();
+    if(!resp.ok){
+      const err=await resp.text();
+      const msg={role:'assistant',content:'죄송합니다, 잠시 문제가 발생했습니다. ('+resp.status+')',t:ccTime()};
+      CC_MSGS.push(msg);ccRenderMessage(msg);ccSaveHistory();
+      console.warn('Concierge error',err);
+      return;
+    }
+    const d=await resp.json();
+    const content=d.choices?.[0]?.message?.content||'죄송합니다, 응답을 받지 못했습니다.';
+    const msg={role:'assistant',content,t:ccTime()};
+    CC_MSGS.push(msg);ccRenderMessage(msg);ccSaveHistory();
+  }catch(e){
+    ccHideTyping();
+    const msg={role:'assistant',content:'네트워크 오류가 발생했습니다.',t:ccTime()};
+    CC_MSGS.push(msg);ccRenderMessage(msg);ccSaveHistory();
+  }finally{
+    CC_BUSY=false;
+    document.getElementById('cc-send').disabled=false;
+  }
+}
+// Enter to send, Shift+Enter newline, auto-grow
+document.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('cc-input');
+  if(inp){
+    inp.addEventListener('input',()=>{inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,90)+'px';});
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Enter' && !e.shiftKey){e.preventDefault();ccSend();}
+    });
+  }
+  ccLoadHistory();
+  if(CC_MSGS.length){
+    const body=document.getElementById('cc-body');
+    body.innerHTML='';
+    CC_MSGS.forEach(m=>ccRenderMessage(m));
+  }
+});
+
 // ── 초기화 ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',async()=>{
   await Promise.all(['croc','lizard','ostrich'].flatMap(m=>[1,2,3].map(v=>loadImg(m,v))));
   // 홈 캔버스 없음 (에디토리얼 이미지 사용)
 });
 </script>
+<!-- ══ CONCIERGE WIDGET ═══════════════════════════════ -->
+<button class="cc-fab" id="cc-fab" onclick="ccToggle()">
+  <span class="cc-fab-mark">V</span>
+  <span>Concierge</span>
+  <span class="cc-fab-caret">▲</span>
+</button>
+<div class="cc-panel" id="cc-panel">
+  <div class="cc-head">
+    <div class="cc-head-mark">V</div>
+    <div class="cc-head-txt">
+      <div class="cc-head-title">VETTI CONCIERGE</div>
+      <div class="cc-head-sub">베티 · AI 맞춤 큐레이터</div>
+    </div>
+    <button class="cc-head-close" onclick="ccToggle()">✕</button>
+  </div>
+  <div class="cc-body" id="cc-body"></div>
+  <div class="cc-foot">
+    <textarea class="cc-input" id="cc-input" placeholder="메시지를 입력하세요…" rows="1"></textarea>
+    <button class="cc-send" id="cc-send" onclick="ccSend()" aria-label="전송">↑</button>
+  </div>
+</div>
 </body>
 </html>
