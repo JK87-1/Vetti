@@ -2194,10 +2194,13 @@ async function ccSend(){
   document.querySelectorAll('#cc-body .cc-suggest').forEach(e=>e.remove());
   ccSaveHistory();
 
-  const key=getOpenAIKey();
+  let key=getOpenAIKey();
   if(!key){
-    const fb={role:'assistant',content:'⚙ 버튼을 눌러 OpenAI API 키를 먼저 설정해 주세요. (결과 화면 상단 우측)',t:ccTime()};
-    CC_MSGS.push(fb);ccRenderMessage(fb);ccSaveHistory();return;
+    const fb={role:'assistant',content:'대화를 시작하려면 OpenAI API 키가 필요합니다. 지금 입력해 주세요 (sk-로 시작). 헤더의 ⚙ 버튼으로 언제든 변경 가능합니다.',t:ccTime()};
+    CC_MSGS.push(fb);ccRenderMessage(fb);ccSaveHistory();
+    setOpenAIKey();
+    key=getOpenAIKey();
+    if(!key) return;
   }
 
   CC_BUSY=true;
@@ -2269,6 +2272,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       <div class="cc-head-title">VETTI CONCIERGE</div>
       <div class="cc-head-sub">베티 · AI 맞춤 큐레이터</div>
     </div>
+    <button class="cc-head-close" onclick="setOpenAIKey()" title="API 키 설정" style="margin-right:4px;">⚙</button>
     <button class="cc-head-close" onclick="ccToggle()">✕</button>
   </div>
   <div class="cc-body" id="cc-body"></div>
