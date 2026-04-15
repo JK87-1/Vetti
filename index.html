@@ -1747,6 +1747,11 @@ async function setRV(n,opts){
     const tick=setInterval(()=>{if(elEl) elEl.textContent=Math.floor((Date.now()-t0)/1000)+'s';},250);
     try{
       const url=await generateGPTImage(n);
+      const elapsed=Date.now()-t0;
+      const minDisplay=3500; // ms — 최소 로딩 노출 시간
+      if(elapsed<minDisplay){
+        await new Promise(r=>setTimeout(r,minDisplay-elapsed));
+      }
       clearInterval(tick);
       if(S.rv!==n){if(ov) ov.style.display='none';return;}
       img.src=url;img.style.display='block';cv.style.display='none';
