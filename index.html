@@ -1733,7 +1733,7 @@ async function setRV(n,opts){
     return;
   }
 
-  if(getOpenAIKey() && opts.render){
+  if(opts.render){
     badge.textContent='Rendering '+['FRONT','SIDE','BACK'][n-1]+'…';
     if(hdBtn) hdBtn.style.display='none';
     img.removeAttribute('src');img.style.display='none';cv.style.display='none';
@@ -1767,17 +1767,12 @@ async function setRV(n,opts){
 
   await showFallback();
   badge.textContent=mat.nm+' '+col.ko;
-  if(hdBtn) hdBtn.style.display=getOpenAIKey()?'block':'none';
+  if(hdBtn) hdBtn.style.display='block';
 }
 function renderCurrentHD(){setRV(S.rv||1,{render:true});}
 
 // ── AI 렌더링 흐름 ───────────────────────────────────
 async function goAI(){
-  if(!getOpenAIKey()){
-    if(confirm('OpenAI API 키를 설정하면 실제 GPT 이미지 렌더가 활성화됩니다.\n지금 설정하시겠습니까? (취소 시 기본 프리뷰로 진행)')){
-      setOpenAIKey();
-    }
-  }
   go('s-result');
   const loading=document.getElementById('ai-loading');
   const result=document.getElementById('ai-result');
