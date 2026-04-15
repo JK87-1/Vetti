@@ -464,25 +464,44 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 .cc-fab{
   position:fixed;right:18px;bottom:22px;z-index:990;
   transition:bottom .2s;
-}
-body.has-bottombar .cc-fab{
-  bottom:96px;
   background:#FFFFFF;color:var(--black);
   border:1px solid #E8E4DE;border-radius:999px;
-  padding:10px 18px 10px 14px;
-  font-size:12px;font-weight:700;letter-spacing:.08em;
-  display:flex;align-items:center;gap:9px;
-  cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.12);
-  transition:transform .18s, box-shadow .18s;
+  padding:13px 20px 13px 16px;
+  font-size:13px;font-weight:700;letter-spacing:.06em;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.14);
 }
-.cc-fab:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.16);}
+body.has-bottombar .cc-fab{bottom:96px;}
+.cc-fab:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.18);}
 .cc-fab-mark{
-  width:22px;height:22px;border-radius:50%;
+  width:26px;height:26px;border-radius:50%;
   background:var(--black);color:#fff;
   display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:800;letter-spacing:.02em;
+  font-size:11px;font-weight:800;letter-spacing:.02em;
 }
-.cc-fab-caret{font-size:9px;opacity:.55;margin-left:2px;}
+.cc-fab-caret{font-size:10px;opacity:.55;margin-left:2px;}
+
+/* Teaser bubble that rotates */
+.cc-teaser{
+  position:fixed;right:18px;bottom:80px;z-index:989;
+  background:#FFFFFF;color:var(--black);
+  border:1px solid #E8E4DE;border-radius:16px 16px 4px 16px;
+  padding:10px 14px;
+  font-size:12px;font-weight:600;letter-spacing:.02em;line-height:1.4;
+  max-width:220px;box-shadow:0 6px 18px rgba(0,0,0,.1);
+  cursor:pointer;
+  opacity:0;transform:translateY(8px);pointer-events:none;
+  transition:opacity .35s ease, transform .35s ease;
+}
+.cc-teaser.show{opacity:1;transform:translateY(0);pointer-events:auto;}
+body.has-bottombar .cc-teaser{bottom:154px;}
+.cc-teaser-close{
+  position:absolute;top:-7px;right:-7px;
+  width:18px;height:18px;border-radius:50%;
+  background:var(--black);color:#fff;border:0;
+  font-size:10px;cursor:pointer;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
 
 .cc-panel{
   position:fixed;right:18px;bottom:22px;z-index:995;
@@ -2185,8 +2204,53 @@ function ccToggle(force){
   const show=typeof force==='boolean'?force:!p.classList.contains('on');
   p.classList.toggle('on',show);
   f.style.display=show?'none':'flex';
+  if(show){ccHideTeaser(true);ccStopTeaser();}
   if(show && !CC_MSGS.length) ccGreet();
   if(show) setTimeout(()=>document.getElementById('cc-input').focus(),120);
+}
+
+// ── Concierge Teaser (5초마다 메시지 순환) ─────────────
+const CC_TEASER_MSGS = [
+  '어떤 가방을 찾으세요?',
+  '베티가 맞춤 추천해드려요',
+  '특별한 선물을 준비 중이신가요?',
+  '색상 · 소재 자유롭게 선택 가능',
+  '원하시는 스타일을 알려주세요',
+];
+let CC_TEASER_IDX = 0;
+let CC_TEASER_TIMER = null;
+let CC_TEASER_DISMISSED = false;
+function ccShowTeaser(){
+  if(CC_TEASER_DISMISSED) return;
+  const p=document.getElementById('cc-panel');
+  if(p && p.classList.contains('on')) return;
+  const el=document.getElementById('cc-teaser');
+  const txt=document.getElementById('cc-teaser-txt');
+  if(!el||!txt) return;
+  txt.textContent=CC_TEASER_MSGS[CC_TEASER_IDX%CC_TEASER_MSGS.length];
+  el.classList.add('show');
+}
+function ccHideTeaser(permanent){
+  const el=document.getElementById('cc-teaser');
+  if(!el) return;
+  el.classList.remove('show');
+  if(permanent) CC_TEASER_DISMISSED=true;
+}
+function ccStartTeaser(){
+  if(CC_TEASER_TIMER||CC_TEASER_DISMISSED) return;
+  // 처음 1.5초 후 첫 표시
+  setTimeout(ccShowTeaser,1500);
+  // 이후 5초마다 다음 메시지
+  CC_TEASER_TIMER=setInterval(()=>{
+    if(CC_TEASER_DISMISSED){clearInterval(CC_TEASER_TIMER);CC_TEASER_TIMER=null;return;}
+    CC_TEASER_IDX++;
+    ccHideTeaser(false);
+    setTimeout(ccShowTeaser,350);
+  },5000);
+}
+function ccStopTeaser(){
+  if(CC_TEASER_TIMER){clearInterval(CC_TEASER_TIMER);CC_TEASER_TIMER=null;}
+  ccHideTeaser(false);
 }
 async function ccSend(){
   if(CC_BUSY) return;
@@ -2249,6 +2313,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     body.innerHTML='';
     CC_MSGS.forEach(m=>ccRenderMessage(m));
   }
+  ccStartTeaser();
 });
 
 // ── 초기화 ────────────────────────────────────────────
@@ -2258,6 +2323,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
 });
 </script>
 <!-- ══ CONCIERGE WIDGET ═══════════════════════════════ -->
+<div class="cc-teaser" id="cc-teaser" onclick="ccToggle(true)">
+  <button class="cc-teaser-close" onclick="event.stopPropagation();ccHideTeaser(true);" aria-label="닫기">✕</button>
+  <span id="cc-teaser-txt">어떤 가방을 찾으세요?</span>
+</div>
 <button class="cc-fab" id="cc-fab" onclick="ccToggle()">
   <span class="cc-fab-mark">V</span>
   <span>Concierge</span>
