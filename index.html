@@ -1056,7 +1056,7 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
     <!-- 렌더링 캔버스 -->
     <div class="result-sketch">
       <div class="rs-badge" id="rs-badge">AI RENDER</div>
-      <button class="rs-key" id="rs-key" onclick="setOpenAIKey()" title="OpenAI API 키 설정">⚙</button>
+      <button class="rs-key" id="rs-key" onclick="setOpenAIKey()" title="OpenAI API 키 설정" style="display:none;">⚙</button>
       <canvas id="result-cv"></canvas>
       <img id="result-img" style="display:none;" alt="AI render"/>
       <div class="render-overlay" id="render-overlay" style="display:none;">
@@ -1575,6 +1575,9 @@ function selSz(id){
   updatePrice();
 }
 
+// ── API 엔드포인트 ───────────────────────────────────
+const API_BASE = 'https://vetti.vercel.app';  // Vercel 프로젝트 URL, 필요 시 교체
+
 // ── OpenAI 이미지 생성 ───────────────────────────────
 const OPENAI_KEY_STORAGE = 'vetti_openai_key';
 const GPT_CACHE_STORAGE = 'vetti_render_cache_v1';
@@ -1656,8 +1659,6 @@ async function padToSquareBlob(dataUrl,size){
   return await new Promise(res=>cvs.toBlob(b=>res(b),'image/png'));
 }
 async function generateGPTImage(n){
-  const key=getOpenAIKey();
-  if(!key) throw new Error('NO_KEY');
   const cacheKey=`${S.mat}|${S.col}|${S.hw}|${S.sz}|${n}`;
   if(GPT_RENDER_CACHE[cacheKey]) return GPT_RENDER_CACHE[cacheKey];
 
@@ -1673,15 +1674,14 @@ async function generateGPTImage(n){
   fd.append('quality','high');
   fd.append('input_fidelity','high');
 
-  console.log('[VETTI] GPT edits call →',{view:n,mat:S.mat,col:S.col,promptLen:buildRenderPrompt(n).length});
+  console.log('[VETTI] image call →',{view:n,mat:S.mat,col:S.col});
   const ctrl=new AbortController();
   const t0=Date.now();
   const tid=setTimeout(()=>ctrl.abort(),120000);
   let resp;
   try{
-    resp=await fetch('https://api.openai.com/v1/images/edits',{
+    resp=await fetch(API_BASE+'/api/image',{
       method:'POST',
-      headers:{'Authorization':'Bearer '+key},
       body:fd,
       signal:ctrl.signal,
     });
@@ -1691,7 +1691,7 @@ async function generateGPTImage(n){
     throw new Error('NETWORK: '+e.message);
   }
   clearTimeout(tid);
-  console.log('[VETTI] GPT response in',(Date.now()-t0)+'ms status',resp.status);
+  console.log('[VETTI] image response in',(Date.now()-t0)+'ms status',resp.status);
   if(!resp.ok){
     const err=await resp.text();
     throw new Error('API '+resp.status+': '+err.slice(0,300));
@@ -2194,15 +2194,6 @@ async function ccSend(){
   document.querySelectorAll('#cc-body .cc-suggest').forEach(e=>e.remove());
   ccSaveHistory();
 
-  let key=getOpenAIKey();
-  if(!key){
-    const fb={role:'assistant',content:'대화를 시작하려면 OpenAI API 키가 필요합니다. 지금 입력해 주세요 (sk-로 시작). 헤더의 ⚙ 버튼으로 언제든 변경 가능합니다.',t:ccTime()};
-    CC_MSGS.push(fb);ccRenderMessage(fb);ccSaveHistory();
-    setOpenAIKey();
-    key=getOpenAIKey();
-    if(!key) return;
-  }
-
   CC_BUSY=true;
   document.getElementById('cc-send').disabled=true;
   ccShowTyping();
@@ -2210,9 +2201,9 @@ async function ccSend(){
     const messages=[{role:'system',content:CC_SYSTEM}].concat(
       CC_MSGS.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role,content:m.content}))
     );
-    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
+    const resp=await fetch(API_BASE+'/api/chat',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'gpt-4o-mini',messages,temperature:0.7})
     });
     ccHideTyping();
@@ -2272,7 +2263,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
       <div class="cc-head-title">VETTI CONCIERGE</div>
       <div class="cc-head-sub">베티 · AI 맞춤 큐레이터</div>
     </div>
-    <button class="cc-head-close" onclick="setOpenAIKey()" title="API 키 설정" style="margin-right:4px;">⚙</button>
     <button class="cc-head-close" onclick="ccToggle()">✕</button>
   </div>
   <div class="cc-body" id="cc-body"></div>
