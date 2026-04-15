@@ -1659,8 +1659,9 @@ async function padToSquareBlob(dataUrl,size){
   return await new Promise(res=>cvs.toBlob(b=>res(b),'image/png'));
 }
 async function generateGPTImage(n){
-  const cacheKey=`${S.mat}|${S.col}|${S.hw}|${S.sz}|${n}`;
-  if(GPT_RENDER_CACHE[cacheKey]) return GPT_RENDER_CACHE[cacheKey];
+  const lkey=`${S.mat}|${S.col}|${S.hw}|${S.sz}|${n}`;
+  const bkey=`${S.mat}_${S.col}_${S.hw}_${S.sz}_${n}`;
+  if(GPT_RENDER_CACHE[lkey]) return GPT_RENDER_CACHE[lkey];
 
   const srcDataUrl=IMGS?.[S.mat]?.[n];
   if(!srcDataUrl) throw new Error('NO_SOURCE_IMG');
@@ -1674,13 +1675,13 @@ async function generateGPTImage(n){
   fd.append('quality','high');
   fd.append('input_fidelity','high');
 
-  console.log('[VETTI] image call →',{view:n,mat:S.mat,col:S.col});
+  console.log('[VETTI] image call →',{view:n,mat:S.mat,col:S.col,bkey});
   const ctrl=new AbortController();
   const t0=Date.now();
   const tid=setTimeout(()=>ctrl.abort(),120000);
   let resp;
   try{
-    resp=await fetch(API_BASE+'/api/image',{
+    resp=await fetch(API_BASE+'/api/image?key='+encodeURIComponent(bkey),{
       method:'POST',
       body:fd,
       signal:ctrl.signal,
@@ -1697,10 +1698,10 @@ async function generateGPTImage(n){
     throw new Error('API '+resp.status+': '+err.slice(0,300));
   }
   const d=await resp.json();
-  const b64=d.data?.[0]?.b64_json;
-  if(!b64) throw new Error('NO_IMAGE');
-  const url='data:image/png;base64,'+b64;
-  GPT_RENDER_CACHE[cacheKey]=url;
+  const url=d.url||d.dataUrl;
+  if(!url) throw new Error('NO_IMAGE');
+  if(d.cached) console.log('[VETTI] served from Blob cache');
+  GPT_RENDER_CACHE[lkey]=url;
   persistCache();
   return url;
 }
