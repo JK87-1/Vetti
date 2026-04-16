@@ -1062,7 +1062,7 @@ body.has-bottombar .cc-teaser{bottom:154px;}
                  border-radius:2px;padding:14px 16px;cursor:pointer;
                  font-family:var(--font);margin-bottom:0;transition:background .2s;">
           <span style="font-size:12px;font-weight:700;color:#fff;letter-spacing:.06em;">
-            16단계 공정단계 확인하기
+            VETTI 공정 단계 확인하기
           </span>
           <span id="proc-arrow"
             style="font-size:11px;color:rgba(255,255,255,.5);transition:transform .3s;display:inline-block;">
@@ -2116,7 +2116,7 @@ function getPatterns(dim){
 const WO_STEPS = [
   {label:'제품 스펙 분석',   detail:'재질/색상/하드웨어/사이즈 파싱'},
   {label:'소재 DB 조회',     detail:'[MAT] 공정 기준 매핑'},
-  {label:'공정 16단계 매핑',  detail:'재단 → 스카이빙 → 봉제 → 마감'},
+  {label:'공정 단계 매핑',    detail:'재단 → 스카이빙 → 봄베 → 글레이징 → 봉제 → 마감'},
   {label:'QC 기준 6항목 생성',detail:'CRITICAL/HIGH/STANDARD 분류'},
   {label:'치수·원가 계산',    detail:'[SZ] 기준 ±2mm 허용치 산출'},
   {label:'작업지시서 컴파일',  detail:'장인 전달용 문서 최종 조립'},
@@ -2212,19 +2212,28 @@ function getProcsFor(matId, hw, dim){
 
   base.push({n:'가죽 수작업 재단',d:'패턴 배치 · 핸드 커팅 · 허용오차 ±1.5mm',t:'1일',w:true});
 
-  const skiv=matId==='croc'?'접합부 0.4mm · 비늘 손상 방지 저속 처리':
-             matId==='lizard'?'접합부 0.35mm · 유광면 보존 스카이빙':
-             '접합부 0.45mm · 퀼 부위 보강 두께 유지';
+  const skiv=matId==='croc'?'본체 0.5~0.6mm · 접합부 0.4mm · 비늘 손상 방지 저속 처리':
+             matId==='lizard'?'본체 0.4~0.5mm · 접합부 0.3~0.35mm · 유광면 보존 스카이빙':
+             '본체 0.6~0.7mm · 접합부 0.4~0.45mm · 퀼 부위 보강 두께 유지';
   base.push({n:'스카이빙 — 가죽 두께 조절',d:skiv,t:'1일',w:true});
-  base.push({n:'봄베 — 가죽 표면 열 가열',d:'열 성형으로 입체 곡면 구현 · '+(matId==='croc'?'85°C':matId==='lizard'?'75°C':'70°C'),t:'0.5일',w:false});
-  base.push({n:'글레이징 — 가죽 표면 광택 가공',d:matId==='lizard'?'고온 글레이징 롤러 처리 · 유광 강화':'롤러 처리 · 표면 밀도 향상',t:'0.5일',w:false});
+  const bombeTemp=matId==='croc'?'80~100°C · 비늘 수축률 측정 후 단계 가열':
+                  matId==='lizard'?'70~85°C · 격자 비늘 변형 주의 · 저온 장시간':
+                  '60~75°C · 퀼 팽창 방지 저온 처리';
+  base.push({n:'봄베 — 가죽 표면 열 가열',d:'열 성형으로 입체 곡면 구현 · '+bombeTemp,t:'0.5일',w:true});
+  const glaze1=matId==='croc'?'카르나우바 왁스 크림 도포 → 마노석(Agate) 저속 러빙 → 1차 광택 형성':
+               matId==='lizard'?'카르나우바 크림 도포 → 마노석 저압 러빙 → 유광 강화':
+               '실리콘 프리 크림 도포 → 소프트 버프 → 매트 광택 유지 (마노석 불사용)';
+  base.push({n:'글레이징 1차 (마노석 공법)',d:glaze1,t:'0.5일',w:true});
   base.push({n:'접착 — 표면 & 안감',d:'본딩제 도포 → 압착 클램핑 12h · 기포 0 기준',t:'1일',w:true});
   base.push({n:'핸들 & 스트랩 제작',d:'심지 삽입 → 롤링 → 새들스티치 2열 · '+dim.hl+'mm',t:'1일',w:false});
   base.push({n:'바디 조립 및 손바느질',d:'앞판·뒤판·거셋 접합 · Fil Au Chinois 0.5mm · 수석장인 감독',t:'2일',w:true});
   base.push({n:'전체 접착',d:'외피-내피 최종 접합 → 프레스 24h → 입구 마감',t:'0.5일',w:false});
   base.push({n:'하드웨어 접착',d:hw.nm+' 도금 클라스프·D링·발(4개소) 장착',t:'0.5일',w:false});
-  base.push({n:'엣지 코팅 마감 (3회)',d:'동색 엣지코트 3회 도포 · 회차별 건조 24h · 400방 샌딩',t:'1.5일',w:false});
-  base.push({n:'글레이징 — 표면 광택',d:'최종 글레이징 처리 · 광택 균일도 검사',t:'0.5일',w:false});
+  base.push({n:'엣지 코팅 마감 (3회)',d:'동색 엣지코트 3회 도포 · 회차별 건조 24h · 400방 샌딩 후 마노석(Agate) 엣지 버니싱',t:'1.5일',w:true});
+  const glaze2=matId==='croc'?'최종 마노석 러빙 3패스 · 광택 균일도 ΔG ≤ 5 · 결점 0':
+               matId==='lizard'?'마노석 고압 러빙 2패스 · 미러 피니시 · ΔG ≤ 3':
+               '최종 소프트 버프 · 매트 균일도 검사 · 자연광 아래 음영 확인';
+  base.push({n:'글레이징 2차 (마감 광택)',d:glaze2,t:'0.5일',w:true});
   base.push({n:'드라이 — 제품 숙성',d:'항온항습 보관 48h · 가죽 안정화 및 형태 고정',t:'2일',w:false});
   base.push({n:'최종 검수',d:'전수 치수 계측 · 외관·기능 검사 · 더스트백 포장',t:'0.5일',w:false});
   return base;
