@@ -28,7 +28,9 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
   padding:0 20px;height:52px;position:relative;
 }
 .logo{font-size:17px;font-weight:800;letter-spacing:.18em;color:var(--black);
-      position:absolute;left:50%;transform:translateX(-50%);}
+      position:absolute;left:50%;transform:translateX(-50%);
+      cursor:pointer;user-select:none;}
+.logo:hover{opacity:.7;}
 .tb-menu{font-size:11px;font-weight:600;color:var(--gray3);letter-spacing:.1em;cursor:pointer;
           background:none;border:none;font-family:var(--font);}
 .tb-back{font-size:11px;font-weight:600;color:var(--gray3);background:none;border:none;
@@ -792,7 +794,7 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 <div class="scr on" id="s-home">
   <div class="topbar">
     <div></div>
-    <div class="logo">VETTI</div>
+    <div class="logo" onclick="go('s-home')" role="button" tabindex="0">VETTI</div>
     <button class="tb-icon" onclick="go('s-orders')" aria-label="내 주문">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <path d="M6 2l1.5 2h9L18 2"/><rect x="4" y="4" width="16" height="18" rx="2"/>
@@ -1158,7 +1160,7 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 <div class="scr" id="s-step1">
   <div class="topbar">
     <button class="tb-back" onclick="go('s-home')">← Back</button>
-    <div class="logo">VETTI</div>
+    <div class="logo" onclick="go('s-home')" role="button" tabindex="0">VETTI</div>
     <div class="tb-step">1 / 3</div>
   </div>
 
@@ -1224,7 +1226,7 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 <div class="scr" id="s-result">
   <div class="topbar">
     <button class="tb-back" onclick="go('s-step1')">← Edit</button>
-    <div class="logo">VETTI</div>
+    <div class="logo" onclick="go('s-home')" role="button" tabindex="0">VETTI</div>
     <div class="tb-step"></div>
   </div>
 
@@ -1295,7 +1297,7 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 <div class="scr" id="s-workorder">
   <div class="topbar">
     <button class="tb-back" onclick="go('s-result')">← Back</button>
-    <div class="logo">VETTI</div>
+    <div class="logo" onclick="go('s-home')" role="button" tabindex="0">VETTI</div>
     <div class="tb-step" id="wo-badge" style="font-size:10px;font-weight:700;">WO-</div>
   </div>
 
@@ -1340,7 +1342,7 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 <div class="scr" id="s-sent">
   <div class="topbar">
     <div></div>
-    <div class="logo">VETTI</div>
+    <div class="logo" onclick="go('s-home')" role="button" tabindex="0">VETTI</div>
     <div></div>
   </div>
   <div class="sent-wrap">
@@ -1356,7 +1358,7 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 <div class="scr" id="s-orders">
   <div class="topbar">
     <button class="tb-back" onclick="go('s-home')">← Back</button>
-    <div class="logo">VETTI</div>
+    <div class="logo" onclick="go('s-home')" role="button" tabindex="0">VETTI</div>
     <div></div>
   </div>
   <div class="orders-wrap">
