@@ -529,6 +529,48 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 }
 .wo-gen-badge-row .dur{color:var(--gray3);font-weight:500;}
 
+/* WO image sections */
+.wo-imgs-sec{break-inside:avoid;}
+.wo-img-group{margin-bottom:18px;}
+.wo-img-group:last-child{margin-bottom:0;}
+.wo-img-group-title{
+  font-size:10px;font-weight:700;letter-spacing:.08em;
+  color:var(--gray2);text-transform:uppercase;
+  margin-bottom:10px;padding-left:2px;
+}
+.wo-img-row{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+.wo-img-cell{
+  background:#F5F3F0;border:1px solid #EDE9E2;border-radius:4px;
+  aspect-ratio:3/4;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;
+}
+.wo-img-cell img{
+  width:100%;height:calc(100% - 22px);
+  object-fit:contain;padding:8px;box-sizing:border-box;
+  display:block;
+}
+.wo-img-lbl{
+  position:absolute;bottom:0;left:0;right:0;
+  background:var(--black);color:#fff;
+  font-size:9px;font-weight:700;letter-spacing:.12em;
+  padding:4px 0;text-align:center;
+}
+.wo-img-placeholder{
+  background:#FAF9F6;border-style:dashed;
+}
+.wo-img-placeholder-txt{
+  font-size:10px;color:var(--gray4);font-weight:600;
+  letter-spacing:.06em;
+}
+.wo-img-note{
+  font-size:10px;color:var(--gray3);margin-top:8px;padding-left:2px;
+  line-height:1.5;
+}
+
 /* Print styles */
 @media print{
   body{background:#fff;}
@@ -2144,6 +2186,36 @@ function buildWO(){
         <div class="wo-num-small">${woNum}</div>
         <div class="wo-title">RENÉE</div>
         <div class="wo-sub">${mat.nm} · ${col.ko} · ${sz.nm}</div>
+      </div>
+
+      <!-- 도면 및 시각 참조 -->
+      <div class="wo-sec wo-imgs-sec">
+        <div class="wo-sec-head">Reference Drawings & Visuals</div>
+        <div class="wo-img-group">
+          <div class="wo-img-group-title">Flat Schematic (Pattern Reference)</div>
+          <div class="wo-img-row">
+            ${[1,2,3].map(n=>{
+              const src=IMGS?.[S.mat]?.[n]||'';
+              const lbl=['FRONT','SIDE','BACK'][n-1];
+              return `<div class="wo-img-cell"><img src="${src}" alt="${lbl} schematic"/><div class="wo-img-lbl">${lbl}</div></div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="wo-img-group">
+          <div class="wo-img-group-title">AI Render (Finish Target · ${mat.nm} / ${col.ko})</div>
+          <div class="wo-img-row">
+            ${[1,2,3].map(n=>{
+              const key=`${S.mat}|${S.col}|${S.hw}|${S.sz}|${n}`;
+              const url=GPT_RENDER_CACHE[key];
+              const lbl=['FRONT','SIDE','BACK'][n-1];
+              if(url){
+                return `<div class="wo-img-cell"><img src="${url}" alt="${lbl} render" crossorigin="anonymous"/><div class="wo-img-lbl">${lbl}</div></div>`;
+              }
+              return `<div class="wo-img-cell wo-img-placeholder"><div class="wo-img-placeholder-txt">미생성</div><div class="wo-img-lbl">${lbl}</div></div>`;
+            }).join('')}
+          </div>
+          <div class="wo-img-note">※ AI 렌더는 색상·광택·질감 기준. 도식화의 실루엣/치수를 우선으로 작업.</div>
+        </div>
       </div>
 
       <!-- 기본 정보 -->
