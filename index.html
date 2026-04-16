@@ -571,6 +571,55 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
   line-height:1.5;
 }
 
+/* Pattern pieces */
+.pat-hint{
+  font-size:10px;color:var(--gray3);padding:6px 2px 12px;
+  letter-spacing:.02em;line-height:1.5;
+}
+.pat-item{
+  border:1px solid var(--gray5);border-radius:4px;
+  padding:10px 12px;margin-bottom:8px;background:#fff;
+  break-inside:avoid;
+}
+.pat-head{
+  display:flex;align-items:center;gap:8px;margin-bottom:6px;
+}
+.pat-code{
+  background:var(--black);color:#fff;
+  font-size:9px;font-weight:800;letter-spacing:.08em;
+  padding:3px 7px;border-radius:3px;
+  font-variant-numeric:tabular-nums;
+}
+.pat-name{flex:1;font-size:13px;font-weight:700;color:var(--black);}
+.pat-ko{font-size:11px;font-weight:500;color:var(--gray3);margin-left:6px;}
+.pat-qty{font-size:11px;font-weight:700;color:var(--black);
+  background:#F5F3F0;padding:2px 8px;border-radius:10px;
+}
+.pat-dims{
+  padding:6px 0 4px;border-bottom:1px dashed var(--gray5);
+  margin-bottom:6px;
+}
+.pat-dim-main{
+  font-size:18px;font-weight:300;letter-spacing:-.01em;
+  color:var(--black);font-variant-numeric:tabular-nums;
+}
+.pat-unit{font-size:10px;margin-left:4px;color:var(--gray3);font-weight:500;}
+.pat-sa{
+  font-size:10px;color:var(--gray2);margin-left:10px;
+  background:#FAF9F6;padding:2px 8px;border-radius:3px;
+  font-weight:600;letter-spacing:.04em;
+}
+.pat-meta{
+  display:flex;gap:16px;font-size:10px;color:var(--gray2);
+  padding:2px 0;letter-spacing:.02em;
+}
+.pat-meta strong{color:var(--gray3);font-weight:700;margin-right:4px;letter-spacing:.1em;}
+.pat-note{
+  font-size:10px;color:var(--gray3);
+  margin-top:6px;padding:6px 8px;background:#FAF9F6;border-radius:3px;
+  line-height:1.5;
+}
+
 /* Print styles */
 @media print{
   body{background:#fff;}
@@ -1924,6 +1973,8 @@ async function setRV(n,opts){
       img.src=url;img.style.display='block';cv.style.display='none';
       if(ov) ov.style.display='none';
       badge.textContent='AI RENDER · '+mat.nm+' '+col.ko;
+      // 프리워밍: 현재 조합의 나머지 뷰도 백그라운드로 생성
+      prewarmOtherViews(n);
       return;
     }catch(e){
       clearInterval(tick);
@@ -2017,6 +2068,50 @@ async function goAI(){
 }
 
 // ── 작업지시서 ───────────────────────────────────────
+// ── 3뷰 프리워밍 ──────────────────────────────────────
+const PREWARM_INFLIGHT = new Set();
+function prewarmOtherViews(currentView){
+  [1,2,3].forEach(v=>{
+    if(v===currentView) return;
+    const key=`${S.mat}|${S.col}|${S.hw}|${S.sz}|${v}`;
+    if(GPT_RENDER_CACHE[key]) return;
+    if(PREWARM_INFLIGHT.has(key)) return;
+    PREWARM_INFLIGHT.add(key);
+    console.log('[VETTI] prewarm start',v);
+    const savedRV=S.rv;
+    const savedView=v;
+    // generateGPTImage uses S.* state for cache key, so we must keep S.mat/col/hw/sz stable
+    // and call with explicit view number
+    generateGPTImage(savedView).then(()=>{
+      console.log('[VETTI] prewarm done',savedView);
+    }).catch(e=>{
+      console.warn('[VETTI] prewarm failed',savedView,e.message);
+    }).finally(()=>{
+      PREWARM_INFLIGHT.delete(key);
+    });
+  });
+}
+
+// ── 패턴 피스 (재단 도면) ──────────────────────────────
+function getPatterns(dim){
+  const saMain=6, saLining=8;  // seam allowance mm
+  return [
+    {code:'P01',nm:'Front Panel',ko:'앞판',qty:1,w:dim.w,h:dim.h,mat:'Main',grain:'Vertical',sa:saMain,note:'메인 외피. 비늘 중심 대칭.'},
+    {code:'P02',nm:'Back Panel',ko:'뒤판',qty:1,w:dim.w,h:dim.h,mat:'Main',grain:'Vertical',sa:saMain,note:'메인 외피.'},
+    {code:'P03',nm:'Side Gusset',ko:'거셋 (측면)',qty:2,w:dim.d,h:dim.h,mat:'Main',grain:'Vertical',sa:saMain,note:'좌/우 대칭 재단.'},
+    {code:'P04',nm:'Bottom Panel',ko:'바닥판',qty:1,w:dim.w,h:dim.d,mat:'Main',grain:'Horizontal',sa:saMain,note:'보강심 P12 부착면.'},
+    {code:'P05',nm:'Top Handle',ko:'탑 핸들',qty:2,w:dim.hl*2+40,h:22,mat:'Main (Rolled)',grain:'Horizontal',sa:0,note:'롤링 후 직경 12mm. 심지 삽입.'},
+    {code:'P06',nm:'Shoulder Strap',ko:'숄더 스트랩',qty:1,w:parseInt((dim.sl||'600').split('~')[0]),h:18,mat:'Main',grain:'Horizontal',sa:0,note:'양단 스냅 클라스프 부착.'},
+    {code:'P07',nm:'Strap Tab',ko:'스트랩 탭',qty:2,w:22,h:55,mat:'Main',grain:'Vertical',sa:saMain,note:'D-ring 연결. 리벳 2개.'},
+    {code:'P08',nm:'Handle Attachment',ko:'핸들 연결부',qty:4,w:18,h:35,mat:'Main',grain:'Vertical',sa:saMain,note:'핸들 양단 4개소 고정.'},
+    {code:'P09',nm:'Lining Front',ko:'내피 앞판',qty:1,w:dim.w,h:dim.h,mat:'Lining',grain:'—',sa:saLining,note:'코튼 트윌 또는 실크 무아레.'},
+    {code:'P10',nm:'Lining Back',ko:'내피 뒤판',qty:1,w:dim.w,h:dim.h,mat:'Lining',grain:'—',sa:saLining,note:'지퍼 포켓 1개 포함.'},
+    {code:'P11',nm:'Lining Gusset',ko:'내피 거셋',qty:2,w:dim.d,h:dim.h,mat:'Lining',grain:'—',sa:saLining,note:'좌/우 대칭.'},
+    {code:'P12',nm:'Base Stiffener',ko:'바닥 보강심',qty:1,w:dim.w-20,h:dim.d-20,mat:'Board 2mm',grain:'—',sa:0,note:'P04 내면 접착.'},
+    {code:'P13',nm:'Top Rim Reinforcement',ko:'입구 보강재',qty:2,w:dim.w-10,h:12,mat:'Board 1mm',grain:'—',sa:0,note:'앞판/뒤판 상단 심지.'},
+  ];
+}
+
 // ── AI 작업지시서 8초 생성 ─────────────────────────────
 const WO_STEPS = [
   {label:'제품 스펙 분석',   detail:'재질/색상/하드웨어/사이즈 파싱'},
@@ -2245,6 +2340,29 @@ function buildWO(){
           {k:'Depth (D)',v:dim.d+'mm'},{k:'Handle Drop',v:dim.hl+'mm'},
           {k:'Shoulder Strap',v:dim.sl+'mm'},{k:'Tolerance',v:'±2mm'},
         ].map(r=>`<div class="wo-kv"><span class="wo-k">${r.k}</span><span class="wo-v" style="font-size:13px;font-weight:800;">${r.v}</span></div>`).join('')}
+      </div>
+
+      <!-- 패턴 피스 (재단 도면) -->
+      <div class="wo-sec">
+        <div class="wo-sec-head">Pattern Pieces (재단 도면 · ${getPatterns(dim).length}점)</div>
+        <div class="pat-hint">모든 치수는 완성 치수 (mm) · Seam Allowance 별도 표기 · Grain은 가죽 결 방향</div>
+        ${getPatterns(dim).map(p=>`
+          <div class="pat-item">
+            <div class="pat-head">
+              <span class="pat-code">${p.code}</span>
+              <span class="pat-name">${p.nm} <span class="pat-ko">${p.ko}</span></span>
+              <span class="pat-qty">×${p.qty}</span>
+            </div>
+            <div class="pat-dims">
+              <span class="pat-dim-main">${p.w} × ${p.h}<span class="pat-unit">mm</span></span>
+              ${p.sa?`<span class="pat-sa">+ SA ${p.sa}mm</span>`:''}
+            </div>
+            <div class="pat-meta">
+              <span><strong>MATERIAL</strong> ${p.mat}</span>
+              <span><strong>GRAIN</strong> ${p.grain}</span>
+            </div>
+            ${p.note?`<div class="pat-note">${p.note}</div>`:''}
+          </div>`).join('')}
       </div>
 
       <!-- 공정 -->
