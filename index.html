@@ -460,6 +460,86 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* ══════════ WORK ORDER GENERATION ══════════ */
+.wo-gen{
+  padding:60px 28px 40px;
+  display:flex;justify-content:center;align-items:flex-start;
+  min-height:560px;
+}
+.wo-gen-inner{
+  width:100%;max-width:380px;text-align:center;
+}
+.wo-gen-tag{
+  font-size:10px;font-weight:800;letter-spacing:.22em;
+  color:var(--gray3);text-transform:uppercase;margin-bottom:18px;
+}
+.wo-gen-timer{
+  font-size:52px;font-weight:300;letter-spacing:-.02em;
+  color:var(--black);font-variant-numeric:tabular-nums;
+  margin-bottom:28px;line-height:1;
+}
+.wo-gen-bar{
+  width:100%;height:3px;background:#EDE9E2;
+  border-radius:2px;overflow:hidden;margin-bottom:32px;
+}
+.wo-gen-fill{
+  height:100%;width:0%;background:var(--black);
+  transition:width .25s linear;
+}
+.wo-gen-steps{
+  text-align:left;display:flex;flex-direction:column;gap:10px;
+  margin-bottom:28px;min-height:240px;
+}
+.wo-gen-step{
+  display:flex;align-items:center;gap:12px;
+  font-size:12px;color:var(--gray3);
+  opacity:0;transform:translateY(4px);
+  transition:opacity .3s, transform .3s, color .3s;
+}
+.wo-gen-step.on{opacity:1;transform:translateY(0);}
+.wo-gen-step.done{color:var(--black);font-weight:600;}
+.wo-gen-step-dot{
+  width:14px;height:14px;border-radius:50%;
+  border:1.5px solid var(--gray4);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;color:#fff;background:transparent;
+  transition:all .3s;
+}
+.wo-gen-step.done .wo-gen-step-dot{
+  background:var(--black);border-color:var(--black);
+}
+.wo-gen-hint{
+  font-size:10px;color:var(--gray4);letter-spacing:.06em;
+}
+
+@keyframes pulse-dot{0%,100%{transform:scale(1);opacity:.6;}50%{transform:scale(1.25);opacity:1;}}
+.wo-gen-step.active .wo-gen-step-dot{
+  background:var(--black);border-color:var(--black);
+  animation:pulse-dot 1s ease-in-out infinite;
+}
+
+.wo-gen-badge-row{
+  padding:12px 16px 0;
+  display:flex;align-items:center;gap:10px;
+  font-size:11px;letter-spacing:.04em;
+}
+.wo-gen-badge-row .tag{
+  background:var(--black);color:#fff;padding:4px 10px;border-radius:12px;
+  font-size:10px;font-weight:700;letter-spacing:.12em;
+}
+.wo-gen-badge-row .dur{color:var(--gray3);font-weight:500;}
+
+/* Print styles */
+@media print{
+  body{background:#fff;}
+  body > *:not(.scr.on){display:none!important;}
+  .scr.on .topbar,.scr.on .bottom-bar,#wo-customer,#wo-pdf-actions,#wo-gen,.cc-fab,.cc-teaser,.cc-panel{display:none!important;}
+  .scr{position:static!important;}
+  .wo-wrap{max-width:none;padding:0;}
+  .wo-sec{break-inside:avoid;}
+  .proc-item,.qc-item{break-inside:avoid;}
+}
+
 /* ══════════ CONCIERGE (AI 상담) ══════════ */
 .cc-fab{
   position:fixed;right:18px;bottom:22px;z-index:990;
@@ -1127,7 +1207,27 @@ body.has-bottombar .cc-teaser{bottom:154px;}
     <div class="logo">VETTI</div>
     <div class="tb-step" id="wo-badge" style="font-size:10px;font-weight:700;">WO-</div>
   </div>
-  <div id="wo-body"></div>
+
+  <!-- 8초 AI 생성 오버레이 -->
+  <div class="wo-gen" id="wo-gen">
+    <div class="wo-gen-inner">
+      <div class="wo-gen-tag">AI 작업지시서 생성 중</div>
+      <div class="wo-gen-timer" id="wo-gen-timer">0.0s</div>
+      <div class="wo-gen-bar"><div class="wo-gen-fill" id="wo-gen-fill"></div></div>
+      <div class="wo-gen-steps" id="wo-gen-steps"></div>
+      <div class="wo-gen-hint">제품 스펙 → 소재 DB → 공정 매핑 → QC 기준 → 작업지시서</div>
+    </div>
+  </div>
+
+  <!-- 생성된 헤더 배지 (완료 후 상단에 표시) -->
+  <div id="wo-gen-badge" style="display:none;"></div>
+
+  <div id="wo-body" style="display:none;"></div>
+  <div id="wo-pdf-actions" style="display:none;padding:8px 16px 0;">
+    <button class="full-btn full-btn-border" onclick="printWO()" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+      <span style="font-size:13px;">📄</span><span>PDF로 저장 / 인쇄</span>
+    </button>
+  </div>
   <div id="wo-customer" style="padding:0 16px 120px;">
     <div style="font-size:10px;font-weight:800;letter-spacing:.18em;color:var(--gray3);text-transform:uppercase;padding:20px 4px 12px;border-bottom:1px solid var(--gray5);margin-bottom:12px;">Customer Information</div>
     <input id="cust-name" placeholder="이름 *" style="display:block;width:100%;margin:8px 0;padding:12px 14px;border:1px solid var(--gray5);border-radius:2px;font-family:var(--font);font-size:13px;background:#fff;outline:none;">
@@ -1421,7 +1521,7 @@ function go(id){
   window.scrollTo(0,0);
   const withBar=['s-step1','s-result','s-workorder'].includes(id);
   document.body.classList.toggle('has-bottombar',withBar);
-  if(id==='s-workorder') buildWO();
+  if(id==='s-workorder') startWOGeneration();
   if(id==='s-step1') {initStep1();updatePrice();}
   if(id==='s-orders') renderOrders();
 }
@@ -1875,6 +1975,124 @@ async function goAI(){
 }
 
 // ── 작업지시서 ───────────────────────────────────────
+// ── AI 작업지시서 8초 생성 ─────────────────────────────
+const WO_STEPS = [
+  {label:'제품 스펙 분석',   detail:'재질/색상/하드웨어/사이즈 파싱'},
+  {label:'소재 DB 조회',     detail:'[MAT] 공정 기준 매핑'},
+  {label:'공정 16단계 매핑',  detail:'재단 → 스카이빙 → 봉제 → 마감'},
+  {label:'QC 기준 6항목 생성',detail:'CRITICAL/HIGH/STANDARD 분류'},
+  {label:'치수·원가 계산',    detail:'[SZ] 기준 ±2mm 허용치 산출'},
+  {label:'작업지시서 컴파일',  detail:'장인 전달용 문서 최종 조립'},
+];
+let WO_GEN_TIMER=null, WO_GEN_START=0;
+
+function startWOGeneration(){
+  const mat=gm();
+  const stepsEl=document.getElementById('wo-gen-steps');
+  const genEl=document.getElementById('wo-gen');
+  const bodyEl=document.getElementById('wo-body');
+  const pdfEl=document.getElementById('wo-pdf-actions');
+  const timerEl=document.getElementById('wo-gen-timer');
+  const fillEl=document.getElementById('wo-gen-fill');
+
+  genEl.style.display='flex';
+  bodyEl.style.display='none';
+  pdfEl.style.display='none';
+
+  stepsEl.innerHTML=WO_STEPS.map((s,i)=>{
+    const detail=s.detail.replace('[MAT]',mat.nm).replace('[SZ]',gs().nm);
+    return `<div class="wo-gen-step" id="wos-${i}">
+      <div class="wo-gen-step-dot">✓</div>
+      <div><div>${s.label}</div><div style="font-size:10px;color:var(--gray4);margin-top:2px;">${detail}</div></div>
+    </div>`;
+  }).join('');
+
+  const TOTAL_MS=8000;
+  const stepDuration=TOTAL_MS/WO_STEPS.length;
+  WO_GEN_START=Date.now();
+  let currentStep=-1;
+
+  if(WO_GEN_TIMER) clearInterval(WO_GEN_TIMER);
+  WO_GEN_TIMER=setInterval(()=>{
+    const elapsed=Date.now()-WO_GEN_START;
+    const progress=Math.min(elapsed/TOTAL_MS,1);
+    timerEl.textContent=(elapsed/1000).toFixed(1)+'s';
+    fillEl.style.width=(progress*100)+'%';
+
+    const newStep=Math.min(Math.floor(elapsed/stepDuration),WO_STEPS.length-1);
+    if(newStep!==currentStep){
+      if(currentStep>=0){
+        const prev=document.getElementById('wos-'+currentStep);
+        if(prev){prev.classList.remove('active');prev.classList.add('done');}
+      }
+      const cur=document.getElementById('wos-'+newStep);
+      if(cur){cur.classList.add('on','active');}
+      currentStep=newStep;
+    }
+
+    if(progress>=1){
+      clearInterval(WO_GEN_TIMER);WO_GEN_TIMER=null;
+      const last=document.getElementById('wos-'+currentStep);
+      if(last){last.classList.remove('active');last.classList.add('done');}
+      timerEl.textContent='8.0s';
+      setTimeout(()=>{
+        buildWO();
+        const durSec=((Date.now()-WO_GEN_START)/1000).toFixed(1);
+        document.getElementById('wo-gen-badge').style.display='block';
+        document.getElementById('wo-gen-badge').innerHTML=`
+          <div class="wo-gen-badge-row">
+            <span class="tag">AUTO-GEN</span>
+            <span class="dur">생성 완료 · ${durSec}s · ${WO_STEPS.length}단계</span>
+          </div>`;
+        genEl.style.display='none';
+        bodyEl.style.display='block';
+        pdfEl.style.display='block';
+      },450);
+    }
+  },80);
+}
+
+function printWO(){ window.print(); }
+
+// ── 재질별 공정 차별화 ────────────────────────────────
+function getProcsFor(matId, hw, dim){
+  const base=[
+    {n:'원부자재 수급 및 준비',d:'소재·부자재·금속 부속 전수 입고 확인 · 로트번호 발급',t:'0.5일',w:false},
+  ];
+  const cites={croc:'CITES 검증 (Nile 악어 A+ · CoP 부속서 II)',
+               lizard:'CITES 검증 (도마뱀 A+ · 원산지 증명)',
+               ostrich:'CITES 검증 (타조 남아프리카 A+)'};
+  base.push({n:cites[matId]||'CITES 검증',d:'A+ 등급 선별 · 원산지 증명서 대조 · 통관 서류 확인',t:'0.5일',w:true});
+  base.push({n:'가죽 정밀 검수',d:'스크래치·결점·등급 전수 검사 · 불량 원단 반출',t:'0.5일',w:true});
+
+  if(matId==='croc'){
+    base.push({n:'혼백 패턴 매칭',d:'뼈대(horn-back) 비늘 좌우 대칭 정렬 · 벨리 전환부 표시',t:'0.5일',w:true});
+  } else if(matId==='lizard'){
+    base.push({n:'비늘 방향 정렬',d:'격자 비늘 좌우 대칭 · 광택면 상단 배치',t:'0.5일',w:true});
+  } else if(matId==='ostrich'){
+    base.push({n:'퀼 포인트 배치',d:'Crown/Quill 부위 중앙 포지셔닝 · 좌우 대칭 5점 기준',t:'0.5일',w:true});
+  }
+
+  base.push({n:'가죽 수작업 재단',d:'패턴 배치 · 핸드 커팅 · 허용오차 ±1.5mm',t:'1일',w:true});
+
+  const skiv=matId==='croc'?'접합부 0.4mm · 비늘 손상 방지 저속 처리':
+             matId==='lizard'?'접합부 0.35mm · 유광면 보존 스카이빙':
+             '접합부 0.45mm · 퀼 부위 보강 두께 유지';
+  base.push({n:'스카이빙 — 가죽 두께 조절',d:skiv,t:'1일',w:true});
+  base.push({n:'봄베 — 가죽 표면 열 가열',d:'열 성형으로 입체 곡면 구현 · '+(matId==='croc'?'85°C':matId==='lizard'?'75°C':'70°C'),t:'0.5일',w:false});
+  base.push({n:'글레이징 — 가죽 표면 광택 가공',d:matId==='lizard'?'고온 글레이징 롤러 처리 · 유광 강화':'롤러 처리 · 표면 밀도 향상',t:'0.5일',w:false});
+  base.push({n:'접착 — 표면 & 안감',d:'본딩제 도포 → 압착 클램핑 12h · 기포 0 기준',t:'1일',w:true});
+  base.push({n:'핸들 & 스트랩 제작',d:'심지 삽입 → 롤링 → 새들스티치 2열 · '+dim.hl+'mm',t:'1일',w:false});
+  base.push({n:'바디 조립 및 손바느질',d:'앞판·뒤판·거셋 접합 · Fil Au Chinois 0.5mm · 수석장인 감독',t:'2일',w:true});
+  base.push({n:'전체 접착',d:'외피-내피 최종 접합 → 프레스 24h → 입구 마감',t:'0.5일',w:false});
+  base.push({n:'하드웨어 접착',d:hw.nm+' 도금 클라스프·D링·발(4개소) 장착',t:'0.5일',w:false});
+  base.push({n:'엣지 코팅 마감 (3회)',d:'동색 엣지코트 3회 도포 · 회차별 건조 24h · 400방 샌딩',t:'1.5일',w:false});
+  base.push({n:'글레이징 — 표면 광택',d:'최종 글레이징 처리 · 광택 균일도 검사',t:'0.5일',w:false});
+  base.push({n:'드라이 — 제품 숙성',d:'항온항습 보관 48h · 가죽 안정화 및 형태 고정',t:'2일',w:false});
+  base.push({n:'최종 검수',d:'전수 치수 계측 · 외관·기능 검사 · 더스트백 포장',t:'0.5일',w:false});
+  return base;
+}
+
 function buildWO(){
   const mat=gm(),col=gc(),sz=gs(),hw=gh();
   const SZD={
@@ -1889,7 +2107,9 @@ function buildWO(){
   document.getElementById('wo-badge').textContent=woNum;
   document.getElementById('wo-price').textContent=fmt(gtot());
 
-  const procs=[
+  const procs=getProcsFor(S.mat,hw,dim);
+  // legacy placeholder entries removed below
+  const _unused_removed=[
     {n:'원부자재 수급 및 준비',d:'소재·부자재·금속 부속 전수 입고 확인 · 로트번호 발급',t:'0.5일',w:false},
     {n:'CITES 검증',d:'A+ 등급 선별 · 원산지 증명서 대조 · 통관 서류 확인',t:'0.5일',w:true},
     {n:'가죽 정밀 검수',d:'스크래치·결점·등급 전수 검사 · 불량 원단 반출',t:'0.5일',w:true},
@@ -1957,7 +2177,7 @@ function buildWO(){
 
       <!-- 공정 -->
       <div class="wo-sec">
-        <div class="wo-sec-head">Production Process (16 Steps)</div>
+        <div class="wo-sec-head">Production Process (${procs.length} Steps)</div>
         ${procs.map((p,i)=>`
           <div class="proc-item">
             <div class="proc-num${i===0||i===procs.length-1?' done':''}">${i===0||i===procs.length-1?'✓':i+1}</div>
