@@ -2749,20 +2749,13 @@ function ccRenderMessage(m,opts){
     cta.onclick=()=>ccApplyRecommend(rec);
     body.appendChild(cta);
     // Follow-up chips
-    const chips=document.createElement('div');
-    chips.className='cc-suggest';
-    ['다른 색상 추천','다른 소재 추천','가격이 궁금해요','바로 선택할게요'].forEach(txt=>{
-      const b=document.createElement('button');
-      b.type='button';
-      b.className='cc-chip';b.textContent=txt;
-      b.onclick=(e)=>{
-        e.preventDefault();e.stopPropagation();
-        if(txt==='바로 선택할게요'){ccApplyRecommend(rec);return;}
-        ccSend(txt);
-      };
-      chips.appendChild(b);
-    });
-    body.appendChild(chips);
+    body.insertAdjacentHTML('beforeend',`
+      <div class="cc-suggest">
+        <button type="button" class="cc-chip" onclick="ccChipClick('다른 색상 추천')">다른 색상 추천</button>
+        <button type="button" class="cc-chip" onclick="ccChipClick('다른 소재 추천')">다른 소재 추천</button>
+        <button type="button" class="cc-chip" onclick="ccChipClick('가격이 궁금해요')">가격이 궁금해요</button>
+        <button type="button" class="cc-chip" onclick="ccChipClick('바로 선택할게요')">바로 선택할게요</button>
+      </div>`);
   }
   body.scrollTop=body.scrollHeight;
 }
@@ -2798,30 +2791,27 @@ function ccHideTyping(){
   const el=document.getElementById('cc-typing-row');
   if(el) el.remove();
 }
+function ccChipClick(txt){
+  if(txt==='소재·색상 먼저 보고 싶어요'){ccToggle(false);go('s-step1');return;}
+  if(txt==='바로 선택할게요'){
+    const lastRec=CC_MSGS.slice().reverse().map(m=>ccParseJSON(m.content)).find(r=>r);
+    if(lastRec) ccApplyRecommend(lastRec);
+    return;
+  }
+  ccSend(txt);
+}
 function ccGreet(){
   const body=document.getElementById('cc-body');
   body.innerHTML='';
   const welcome={role:'assistant',content:'안녕하세요, VETTI 큐레이터 베티입니다.\n편하게 말씀해 주세요. 어떤 상황에 사용하실 가방을 찾고 계신가요?',t:ccTime()};
   ccRenderMessage(welcome);
-  const chipRow=document.createElement('div');
-  chipRow.className='cc-suggest';
-  [
-    '일상에서 쓸 데일리 가방',
-    '선물용으로 추천받고 싶어요',
-    '특별한 자리를 위한 가방',
-    '소재·색상 먼저 보고 싶어요',
-  ].forEach(txt=>{
-    const b=document.createElement('button');
-    b.type='button';
-    b.className='cc-chip';b.textContent=txt;
-    b.onclick=(e)=>{
-      e.preventDefault();e.stopPropagation();
-      if(txt==='소재·색상 먼저 보고 싶어요'){ccToggle(false);go('s-step1');return;}
-      ccSend(txt);
-    };
-    chipRow.appendChild(b);
-  });
-  body.appendChild(chipRow);
+  body.insertAdjacentHTML('beforeend',`
+    <div class="cc-suggest">
+      <button type="button" class="cc-chip" onclick="ccChipClick('일상에서 쓸 데일리 가방')">일상에서 쓸 데일리 가방</button>
+      <button type="button" class="cc-chip" onclick="ccChipClick('선물용으로 추천받고 싶어요')">선물용으로 추천받고 싶어요</button>
+      <button type="button" class="cc-chip" onclick="ccChipClick('특별한 자리를 위한 가방')">특별한 자리를 위한 가방</button>
+      <button type="button" class="cc-chip" onclick="ccChipClick('소재·색상 먼저 보고 싶어요')">소재·색상 먼저 보고 싶어요</button>
+    </div>`);
 }
 function ccToggle(force){
   const p=document.getElementById('cc-panel');
@@ -2831,6 +2821,7 @@ function ccToggle(force){
   f.style.display=show?'none':'flex';
   if(show){ccHideTeaser(true);ccStopTeaser();}
   if(show && !CC_MSGS.length) ccGreet();
+  if(show && CC_MSGS.length) body.scrollTop=body.scrollHeight;
   if(show) setTimeout(()=>document.getElementById('cc-input').focus(),120);
 }
 
