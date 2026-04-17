@@ -2884,16 +2884,15 @@ async function ccSend(directTxt){
   const txt=directTxt||(inp?inp.value.trim():'');
   if(!txt) return;
   if(inp){inp.value='';inp.style.height='auto';}
+  // Handle attached image (must be before userMsg uses it)
+  const attachedImg=CC_PENDING_IMG;
+  ccClearImg();
   const userMsg={role:'user',content:txt,t:ccTime()};
   if(attachedImg) userMsg.img=attachedImg;
   CC_MSGS.push(userMsg);
   ccRenderMessage(userMsg);
   document.querySelectorAll('#cc-body .cc-suggest').forEach(e=>e.remove());
   ccSaveHistory();
-
-  // Handle attached image
-  const attachedImg=CC_PENDING_IMG;
-  ccClearImg();
 
   CC_BUSY=true;
   document.getElementById('cc-send').disabled=true;
@@ -2990,7 +2989,6 @@ document.addEventListener('click',function(e){
   if(!chip) return;
   e.preventDefault();e.stopPropagation();
   const txt=chip.getAttribute('data-cc');
-  alert('칩 클릭: '+txt);
   ccChipClick(txt);
 },true);
 
