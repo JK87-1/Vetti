@@ -794,6 +794,7 @@ body.has-bottombar .cc-teaser{bottom:154px;}
   flex:1;overflow-y:auto;padding:18px 16px;
   background:#FCFAF7;
   display:flex;flex-direction:column;gap:14px;
+  -webkit-overflow-scrolling:touch;
 }
 .cc-msg{display:flex;gap:10px;align-items:flex-start;}
 .cc-msg.me{justify-content:flex-end;}
@@ -832,13 +833,18 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 
 .cc-suggest{
   display:flex;flex-wrap:wrap;gap:6px;padding:0 6px 4px;
+  position:relative;z-index:10;
 }
 .cc-chip{
   background:#FFFFFF;border:1px solid #E0DAD0;
-  color:var(--black);font-size:11px;font-weight:600;
-  padding:7px 12px;border-radius:999px;cursor:pointer;
+  color:var(--black);font-size:13px;font-weight:600;
+  padding:10px 14px;border-radius:999px;cursor:pointer;
   transition:all .15s;letter-spacing:.02em;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:rgba(0,0,0,.08);
+  user-select:none;
 }
+.cc-chip:active{background:var(--black);color:#fff;border-color:var(--black);}
 .cc-chip:hover{background:var(--black);color:#fff;border-color:var(--black);}
 
 .cc-rec-card{
@@ -2751,10 +2757,10 @@ function ccRenderMessage(m,opts){
     // Follow-up chips
     body.insertAdjacentHTML('beforeend',`
       <div class="cc-suggest">
-        <button type="button" class="cc-chip" onclick="ccChipClick('다른 색상 추천')">다른 색상 추천</button>
-        <button type="button" class="cc-chip" onclick="ccChipClick('다른 소재 추천')">다른 소재 추천</button>
-        <button type="button" class="cc-chip" onclick="ccChipClick('가격이 궁금해요')">가격이 궁금해요</button>
-        <button type="button" class="cc-chip" onclick="ccChipClick('바로 선택할게요')">바로 선택할게요</button>
+        <button type="button" class="cc-chip" ontouchend="ccChipClick('다른 색상 추천',event)" onclick="ccChipClick('다른 색상 추천',event)">다른 색상 추천</button>
+        <button type="button" class="cc-chip" ontouchend="ccChipClick('다른 소재 추천',event)" onclick="ccChipClick('다른 소재 추천',event)">다른 소재 추천</button>
+        <button type="button" class="cc-chip" ontouchend="ccChipClick('가격이 궁금해요',event)" onclick="ccChipClick('가격이 궁금해요',event)">가격이 궁금해요</button>
+        <button type="button" class="cc-chip" ontouchend="ccChipClick('바로 선택할게요',event)" onclick="ccChipClick('바로 선택할게요',event)">바로 선택할게요</button>
       </div>`);
   }
   body.scrollTop=body.scrollHeight;
@@ -2791,7 +2797,11 @@ function ccHideTyping(){
   const el=document.getElementById('cc-typing-row');
   if(el) el.remove();
 }
-function ccChipClick(txt){
+let _ccChipLast=0;
+function ccChipClick(txt,evt){
+  if(evt){evt.preventDefault();evt.stopPropagation();}
+  const now=Date.now();if(now-_ccChipLast<500)return;_ccChipLast=now;
+  console.log('[VETTI] chip clicked:',txt);
   if(txt==='소재·색상 먼저 보고 싶어요'){ccToggle(false);go('s-step1');return;}
   if(txt==='바로 선택할게요'){
     const lastRec=CC_MSGS.slice().reverse().map(m=>ccParseJSON(m.content)).find(r=>r);
@@ -2807,10 +2817,10 @@ function ccGreet(){
   ccRenderMessage(welcome);
   body.insertAdjacentHTML('beforeend',`
     <div class="cc-suggest">
-      <button type="button" class="cc-chip" onclick="ccChipClick('일상에서 쓸 데일리 가방')">일상에서 쓸 데일리 가방</button>
-      <button type="button" class="cc-chip" onclick="ccChipClick('선물용으로 추천받고 싶어요')">선물용으로 추천받고 싶어요</button>
-      <button type="button" class="cc-chip" onclick="ccChipClick('특별한 자리를 위한 가방')">특별한 자리를 위한 가방</button>
-      <button type="button" class="cc-chip" onclick="ccChipClick('소재·색상 먼저 보고 싶어요')">소재·색상 먼저 보고 싶어요</button>
+      <button type="button" class="cc-chip" ontouchend="ccChipClick('일상에서 쓸 데일리 가방',event)" onclick="ccChipClick('일상에서 쓸 데일리 가방',event)">일상에서 쓸 데일리 가방</button>
+      <button type="button" class="cc-chip" ontouchend="ccChipClick('선물용으로 추천받고 싶어요',event)" onclick="ccChipClick('선물용으로 추천받고 싶어요',event)">선물용으로 추천받고 싶어요</button>
+      <button type="button" class="cc-chip" ontouchend="ccChipClick('특별한 자리를 위한 가방',event)" onclick="ccChipClick('특별한 자리를 위한 가방',event)">특별한 자리를 위한 가방</button>
+      <button type="button" class="cc-chip" ontouchend="ccChipClick('소재·색상 먼저 보고 싶어요',event)" onclick="ccChipClick('소재·색상 먼저 보고 싶어요',event)">소재·색상 먼저 보고 싶어요</button>
     </div>`);
 }
 function ccToggle(force){
