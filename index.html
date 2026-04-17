@@ -3063,7 +3063,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
     </div>
     <button class="cc-head-close" onclick="ccToggle()">✕</button>
   </div>
-  <div class="cc-body" id="cc-body"></div>
+  <div class="cc-body" id="cc-body">
+    <button type="button" id="cc-test-btn" style="background:red;color:white;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;margin-bottom:8px;" onclick="alert('클릭 작동함!')">테스트: 이 버튼을 눌러보세요</button>
+  </div>
   <div class="cc-img-preview" id="cc-img-preview" style="display:none;">
     <img id="cc-img-thumb"/>
     <button class="cc-img-remove" onclick="ccClearImg()">✕</button>
