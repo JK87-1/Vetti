@@ -633,6 +633,87 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
   .proc-item,.qc-item{break-inside:avoid;}
 }
 
+/* ══════════ ONBOARDING ══════════ */
+.ob-overlay{
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(0,0,0,.55);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;animation:obFadeIn .4s .3s ease forwards;
+}
+@keyframes obFadeIn{to{opacity:1;}}
+.ob-sheet{
+  width:100%;max-width:430px;
+  background:#fff;border-radius:20px 20px 0 0;
+  padding:32px 28px 40px;
+  transform:translateY(100%);
+  animation:obSlideUp .45s .5s cubic-bezier(.22,.68,0,1) forwards;
+}
+@keyframes obSlideUp{to{transform:translateY(0);}}
+.ob-logo{
+  font-size:14px;font-weight:800;letter-spacing:.2em;
+  color:var(--gray3);text-align:center;margin-bottom:20px;
+}
+.ob-headline{
+  font-size:22px;font-weight:800;color:var(--black);
+  text-align:center;line-height:1.35;margin-bottom:8px;
+}
+.ob-sub{
+  font-size:13px;color:var(--gray2);text-align:center;
+  line-height:1.6;margin-bottom:28px;
+}
+.ob-steps{
+  display:flex;flex-direction:column;gap:16px;
+  margin-bottom:28px;
+}
+.ob-step{
+  display:flex;gap:14px;align-items:flex-start;
+}
+.ob-step-num{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--black);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;flex-shrink:0;
+}
+.ob-step-txt{
+  font-size:13px;color:var(--black);line-height:1.5;
+}
+.ob-step-txt strong{font-weight:700;}
+.ob-cta{
+  width:100%;padding:16px;border:0;border-radius:10px;
+  background:var(--black);color:#fff;
+  font-size:14px;font-weight:700;letter-spacing:.06em;
+  cursor:pointer;font-family:var(--font);
+}
+.ob-cta:hover{opacity:.88;}
+.ob-skip{
+  text-align:center;margin-top:12px;
+  font-size:12px;color:var(--gray3);cursor:pointer;
+  letter-spacing:.04em;
+}
+.ob-skip:hover{color:var(--black);}
+
+/* ══════════ MOBILE UX FIXES ══════════ */
+@media(max-width:430px){
+  .cc-panel{
+    width:100%;right:0;bottom:0;
+    border-radius:14px 14px 0 0;
+    height:min(85vh, 620px);
+  }
+  .cc-fab{right:14px;bottom:18px;}
+  body.has-bottombar .cc-fab{bottom:88px;}
+  .cc-teaser{right:14px;bottom:72px;}
+  body.has-bottombar .cc-teaser{bottom:142px;}
+  .cc-input{font-size:16px!important;}
+  .ob-headline{font-size:20px;}
+  .ob-sub{font-size:12px;}
+  .rvtab,.vtab{min-height:44px;}
+  .hw-btn{min-height:44px;}
+  .cdot{width:36px!important;height:36px!important;}
+  .mat-card{min-height:44px;}
+  .full-btn{min-height:48px;}
+  .ba-cta{min-height:48px;}
+}
+
 /* ══════════ CONCIERGE (AI 상담) ══════════ */
 .cc-fab{
   position:fixed;right:18px;bottom:22px;z-index:990;
@@ -2914,7 +2995,18 @@ document.addEventListener('DOMContentLoaded',()=>{
     CC_MSGS.forEach(m=>ccRenderMessage(m));
   }
   ccStartTeaser();
+  // Onboarding: show only on first visit
+  if(!localStorage.getItem('vetti_onboarded')){
+    document.getElementById('ob-overlay').style.display='flex';
+  } else {
+    document.getElementById('ob-overlay').style.display='none';
+  }
 });
+function obDismiss(){
+  const el=document.getElementById('ob-overlay');
+  if(el){el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.style.display='none',300);}
+  localStorage.setItem('vetti_onboarded','1');
+}
 
 // ── 초기화 ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',async()=>{
@@ -2922,6 +3014,31 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // 홈 캔버스 없음 (에디토리얼 이미지 사용)
 });
 </script>
+<!-- ══ ONBOARDING ═════════════════════════════════════ -->
+<div class="ob-overlay" id="ob-overlay">
+  <div class="ob-sheet">
+    <div class="ob-logo">VETTI</div>
+    <div class="ob-headline">나만의 가방을 만들어 보세요</div>
+    <div class="ob-sub">AI 큐레이터가 소재·색상·사이즈를 추천하고,<br>장인이 직접 제작합니다.</div>
+    <div class="ob-steps">
+      <div class="ob-step">
+        <div class="ob-step-num">1</div>
+        <div class="ob-step-txt"><strong>베티에게 말씀해 주세요</strong><br>취향·용도를 알려주시면 맞춤 추천해 드려요</div>
+      </div>
+      <div class="ob-step">
+        <div class="ob-step-num">2</div>
+        <div class="ob-step-txt"><strong>소재·색상·사이즈 선택</strong><br>크로커다일 · 리자드 · 오스트리치 중 취향에 맞게</div>
+      </div>
+      <div class="ob-step">
+        <div class="ob-step-num">3</div>
+        <div class="ob-step-txt"><strong>AI가 완성 이미지를 생성</strong><br>실제 제작 전 렌더를 확인하고 작업지시서까지</div>
+      </div>
+    </div>
+    <button class="ob-cta" onclick="obDismiss()">시작하기</button>
+    <div class="ob-skip" onclick="obDismiss()">건너뛰기</div>
+  </div>
+</div>
+
 <!-- ══ CONCIERGE WIDGET ═══════════════════════════════ -->
 <div class="cc-teaser" id="cc-teaser" onclick="ccToggle(true)">
   <button class="cc-teaser-close" onclick="event.stopPropagation();ccHideTeaser(true);" aria-label="닫기">✕</button>
