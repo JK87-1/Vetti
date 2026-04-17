@@ -2757,10 +2757,10 @@ function ccRenderMessage(m,opts){
     // Follow-up chips
     body.insertAdjacentHTML('beforeend',`
       <div class="cc-suggest">
-        <button type="button" class="cc-chip" ontouchend="ccChipClick('다른 색상 추천',event)" onclick="ccChipClick('다른 색상 추천',event)">다른 색상 추천</button>
-        <button type="button" class="cc-chip" ontouchend="ccChipClick('다른 소재 추천',event)" onclick="ccChipClick('다른 소재 추천',event)">다른 소재 추천</button>
-        <button type="button" class="cc-chip" ontouchend="ccChipClick('가격이 궁금해요',event)" onclick="ccChipClick('가격이 궁금해요',event)">가격이 궁금해요</button>
-        <button type="button" class="cc-chip" ontouchend="ccChipClick('바로 선택할게요',event)" onclick="ccChipClick('바로 선택할게요',event)">바로 선택할게요</button>
+        <button type="button" class="cc-chip" data-cc="다른 색상 추천">다른 색상 추천</button>
+        <button type="button" class="cc-chip" data-cc="다른 소재 추천">다른 소재 추천</button>
+        <button type="button" class="cc-chip" data-cc="가격이 궁금해요">가격이 궁금해요</button>
+        <button type="button" class="cc-chip" data-cc="바로 선택할게요">바로 선택할게요</button>
       </div>`);
   }
   body.scrollTop=body.scrollHeight;
@@ -2817,10 +2817,10 @@ function ccGreet(){
   ccRenderMessage(welcome);
   body.insertAdjacentHTML('beforeend',`
     <div class="cc-suggest">
-      <button type="button" class="cc-chip" ontouchend="ccChipClick('일상에서 쓸 데일리 가방',event)" onclick="ccChipClick('일상에서 쓸 데일리 가방',event)">일상에서 쓸 데일리 가방</button>
-      <button type="button" class="cc-chip" ontouchend="ccChipClick('선물용으로 추천받고 싶어요',event)" onclick="ccChipClick('선물용으로 추천받고 싶어요',event)">선물용으로 추천받고 싶어요</button>
-      <button type="button" class="cc-chip" ontouchend="ccChipClick('특별한 자리를 위한 가방',event)" onclick="ccChipClick('특별한 자리를 위한 가방',event)">특별한 자리를 위한 가방</button>
-      <button type="button" class="cc-chip" ontouchend="ccChipClick('소재·색상 먼저 보고 싶어요',event)" onclick="ccChipClick('소재·색상 먼저 보고 싶어요',event)">소재·색상 먼저 보고 싶어요</button>
+      <button type="button" class="cc-chip" data-cc="일상에서 쓸 데일리 가방">일상에서 쓸 데일리 가방</button>
+      <button type="button" class="cc-chip" data-cc="선물용으로 추천받고 싶어요">선물용으로 추천받고 싶어요</button>
+      <button type="button" class="cc-chip" data-cc="특별한 자리를 위한 가방">특별한 자리를 위한 가방</button>
+      <button type="button" class="cc-chip" data-cc="소재·색상 먼저 보고 싶어요">소재·색상 먼저 보고 싶어요</button>
     </div>`);
 }
 function ccToggle(force){
@@ -2984,6 +2984,21 @@ function ccClearImg(){
   if(prev) prev.style.display='none';
 }
 
+// Event delegation for all cc-chip clicks
+document.addEventListener('DOMContentLoaded',()=>{
+  const ccBody=document.getElementById('cc-body');
+  if(ccBody){
+    ccBody.addEventListener('click',function(e){
+      const chip=e.target.closest('[data-cc]');
+      if(!chip) return;
+      e.preventDefault();e.stopPropagation();
+      const txt=chip.getAttribute('data-cc');
+      console.log('[VETTI] chip delegate click:',txt);
+      ccChipClick(txt);
+    });
+  }
+});
+
 // Enter to send, Shift+Enter newline, auto-grow
 document.addEventListener('DOMContentLoaded',()=>{
   const inp=document.getElementById('cc-input');
@@ -3063,9 +3078,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     </div>
     <button class="cc-head-close" onclick="ccToggle()">✕</button>
   </div>
-  <div class="cc-body" id="cc-body">
-    <button type="button" id="cc-test-btn" style="background:red;color:white;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;margin-bottom:8px;" onclick="alert('클릭 작동함!')">테스트: 이 버튼을 눌러보세요</button>
-  </div>
+  <div class="cc-body" id="cc-body"></div>
   <div class="cc-img-preview" id="cc-img-preview" style="display:none;">
     <img id="cc-img-thumb"/>
     <button class="cc-img-remove" onclick="ccClearImg()">✕</button>
