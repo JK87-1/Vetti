@@ -760,8 +760,25 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 }
 .cc-chip:hover{background:var(--black);color:#fff;border-color:var(--black);}
 
+.cc-rec-card{
+  margin:4px 6px;background:#FFFFFF;border:1px solid #E0DAD0;
+  border-radius:10px;padding:12px 14px;
+}
+.cc-rec-title{
+  font-size:10px;font-weight:800;letter-spacing:.16em;
+  color:var(--gray3);text-transform:uppercase;margin-bottom:10px;
+}
+.cc-rec-specs{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;}
+.cc-rec-spec{display:flex;flex-direction:column;gap:2px;}
+.cc-rec-label{font-size:9px;color:var(--gray3);font-weight:700;letter-spacing:.1em;}
+.cc-rec-val{font-size:13px;color:var(--black);font-weight:700;}
+.cc-rec-reason{
+  margin-top:10px;padding-top:10px;border-top:1px solid #F0ECE6;
+  font-size:11px;color:var(--gray2);font-style:italic;line-height:1.5;
+}
+
 .cc-cta{
-  margin:2px 6px 0;background:var(--black);color:#fff;
+  margin:4px 6px 0;background:var(--black);color:#fff;
   border:0;border-radius:8px;padding:12px 14px;
   font-size:12px;font-weight:700;letter-spacing:.08em;
   cursor:pointer;text-transform:uppercase;
@@ -2497,33 +2514,75 @@ function toggleProc(){
 
 // ── CONCIERGE (AI 상담) ───────────────────────────────
 const CC_HISTORY_KEY='vetti_cc_history_v1';
-const CC_SYSTEM=`당신은 VETTI의 수석 큐레이터 "베티"입니다. VETTI는 악어/리자드/오스트리치 가죽 기반 프리미엄 맞춤 가방 브랜드입니다.
+const CC_SYSTEM=`당신은 VETTI의 수석 큐레이터 "베티"입니다.
+
+[VETTI 브랜드 정보]
+- 서울 기반, 프리미엄 이그조틱 가죽 맞춤 가방 브랜드
+- 현재 시그니처 모델: RENÉE (르네) — 구조적 미니멀 토트
+- 40년 경력 장인이 16~18단계 수작업으로 제작 (봄베, 마노석 글레이징 등)
+- 맞춤 제작이라 주문 후 4주 리드타임
+- 모든 이그조틱 가죽은 CITES 인증 정품
+
+[제품 상세 — RENÉE]
+재질 3종:
+  · 크로커다일 (Crocodile) — 나일강 유역 CITES A+ · 습식태닝 60일 · 자연 비늘 패턴 · Base ₩2,400,000
+  · 리자드 (Lizard) — 동남아 · 크롬태닝 28일 · 섬세한 격자 비늘 · 유광 래커 · ₩1,500,000
+  · 오스트리치 (Ostrich) — 남아프리카 · 베지터블태닝 45일 · 퀼 포인트 · ₩1,800,000
+색상 7종: Black(블랙), Burgundy(버건디), Navy(네이비), Camel(카멜), Ivory(아이보리), Forest(포레스트), Rose(로즈)
+하드웨어 2종: Gold(24K 도금), Silver(팔라듐)
+사이즈 3종:
+  · Mini — W180×H140×D90mm, 핸들드롭 120mm — 이브닝/미니멀
+  · Medium — W280×H220×D110mm, 핸들드롭 145mm — 데일리/비즈니스
+  · Large — W360×H280×D140mm, 핸들드롭 160mm — 비즈니스/여행
+
+[가격 구조] (Base = 크로커다일 Medium)
+  Base ₩2,400,000
+  리자드 차액: -₩900,000 (= ₩1,500,000)
+  오스트리치 차액: -₩600,000 (= ₩1,800,000)
+  Mini: -₩200,000 / Large: +₩300,000
+  Silver HW: +₩0 / Gold HW: +₩0
+
+[추천 가이드 — 상황별]
+· 일상 데일리 → 리자드 Medium (가볍고 내구성↑) 또는 오스트리치 Medium (캐주얼 럭셔리)
+· 비즈니스/격식 → 크로커다일 Medium/Large + 블랙/네이비 + 골드
+· 이브닝/파티 → 크로커다일 Mini + 버건디/로즈 + 골드
+· 선물 (여성 어른) → 크로커다일 Medium + 클래식 컬러 (블랙/버건디)
+· 선물 (젊은 여성) → 리자드 Mini + 로즈/아이보리 + 실버
+· 캐주얼/개성 → 오스트리치 + 포레스트/카멜
 
 [대화 규칙]
-- 고객에게 반말하지 말고, 정중하고 우아한 존댓말 사용 (에르메스·루이비통 매장 톤)
-- 짧고 간결하게 (2~4문장). 과도한 이모지 금지.
-- 한 번에 한 가지만 질문. 쏟아붓지 말 것.
+- 에르메스·루이비통 매장의 시니어 SA 톤. 정중하고 우아한 존댓말.
+- 짧고 간결하게 (2~4문장). 이모지는 사용하지 않는다.
+- 한 번에 한 가지만 질문. 고객이 부담 느끼지 않게.
+- 가격은 고객이 물어볼 때만 안내. 먼저 언급하지 않는다.
+- "추천드려도 될까요?" 허락을 구한 뒤 추천한다.
+- 참고 이미지 묘사하면 비슷한 VETTI 옵션으로 연결해준다.
+- 모르는 질문 (반품 정책, 매장 위치 등)에는 "현재 온라인 맞춤 주문만 가능합니다" 안내.
 
 [수집 정보 순서]
-1. 사용 상황 (일상/특별한 자리/선물 등)
-2. 선호 스타일 (클래식/모던/미니멀 등)
-3. 예산 감도 (선택사항, 자연스럽게)
-4. 참고 이미지 유무 (없어도 OK)
+1단계: 사용 상황 또는 목적 (자연스럽게 파악)
+2단계: 스타일 선호 (클래식/모던/미니멀 · 좋아하는 브랜드나 이미지가 있는지)
+3단계: 사이즈 감 (들고 다닐 물건 기준으로 안내 — "핸드폰+카드지갑 정도면 Mini, 서류도 넣으시면 Medium")
+4단계: 색상·재질 취향 (추천 가이드 참고해서 1~2개 제안)
+→ 정보가 충분하면 추천 확정
 
-[추천 가능 옵션]
-- 재질: 크로커다일(Base), 리자드(+90만원), 오스트리치(+60만원)
-- 색상: Black / Burgundy / Navy / Camel / Ivory / Forest / Rose
-- 하드웨어: Gold / Silver
-- 사이즈: Mini / Medium / Large
-
-[추천 확정 시]
-필요한 정보가 충분히 모이면, 반드시 다음과 같은 JSON 블록으로 추천을 마무리하세요:
+[추천 확정 시 — 반드시 이 포맷]
+자연스러운 추천 멘트 2~3문장 작성.
+그 안에 반드시 다음 JSON 블록 포함:
 
 \`\`\`vetti-recommend
 {"mat":"croc|lizard|ostrich","col":"black|burgundy|navy|camel|ivory|forest|rose","hw":"gold|silver","sz":"mini|medium|large","reason":"한 줄 이유"}
 \`\`\`
 
-JSON 앞뒤로 자연스러운 추천 멘트 한두 문장을 곁들이세요. JSON은 시스템이 파싱해 "시각화하기" 버튼을 띄우는 용도입니다.`;
+주의: mat/col/hw/sz 값은 반드시 위 목록의 영문 소문자 ID만 사용. JSON 뒤에 "바로 시각화해 보시겠어요?" 같은 유도 문구 추가.
+
+[절대 금지]
+- 가격을 먼저 말하지 않는다 (고객이 물어볼 때만)
+- "저렴한", "비싼" 같은 표현 금지 → "합리적인", "프리미엄" 사용
+- 다른 브랜드를 깎아내리지 않는다
+- 재고/품절 언급 금지 (맞춤 제작이라 해당 없음)
+- 허위 정보 금지 (모르면 "확인 후 안내드리겠습니다")
+- 한 메시지에 3개 이상 옵션 나열 금지 (1~2개만 콕 집어 추천)`;
 
 let CC_MSGS=[]; // [{role, content}]
 let CC_BUSY=false;
@@ -2557,14 +2616,44 @@ function ccRenderMessage(m,opts){
   html.push(`</div>`);
   wrap.innerHTML=html.join('');
   body.appendChild(wrap);
-  // If recommendation JSON found, inject CTA
+  // If recommendation JSON found, inject recommendation card
   const rec=ccParseJSON(m.content);
   if(rec && !isMe){
+    const matNames={croc:'크로커다일',lizard:'리자드',ostrich:'오스트리치'};
+    const colNames={black:'블랙',burgundy:'버건디',navy:'네이비',camel:'카멜',ivory:'아이보리',forest:'포레스트',rose:'로즈'};
+    const hwNames={gold:'Gold',silver:'Silver'};
+    const szNames={mini:'Mini',medium:'Medium',large:'Large'};
+    const card=document.createElement('div');
+    card.className='cc-rec-card';
+    card.innerHTML=`
+      <div class="cc-rec-title">RENÉE · 맞춤 추천</div>
+      <div class="cc-rec-specs">
+        <div class="cc-rec-spec"><span class="cc-rec-label">소재</span><span class="cc-rec-val">${matNames[rec.mat]||rec.mat}</span></div>
+        <div class="cc-rec-spec"><span class="cc-rec-label">색상</span><span class="cc-rec-val">${colNames[rec.col]||rec.col}</span></div>
+        <div class="cc-rec-spec"><span class="cc-rec-label">하드웨어</span><span class="cc-rec-val">${hwNames[rec.hw]||rec.hw}</span></div>
+        <div class="cc-rec-spec"><span class="cc-rec-label">사이즈</span><span class="cc-rec-val">${szNames[rec.sz]||rec.sz}</span></div>
+      </div>
+      ${rec.reason?`<div class="cc-rec-reason">"${rec.reason}"</div>`:''}
+    `;
+    body.appendChild(card);
     const cta=document.createElement('button');
     cta.className='cc-cta';
     cta.textContent='이 조합으로 시각화하기 →';
     cta.onclick=()=>ccApplyRecommend(rec);
     body.appendChild(cta);
+    // Follow-up chips
+    const chips=document.createElement('div');
+    chips.className='cc-suggest';
+    ['다른 색상 추천','다른 소재 추천','가격이 궁금해요','바로 선택할게요'].forEach(txt=>{
+      const b=document.createElement('button');
+      b.className='cc-chip';b.textContent=txt;
+      b.onclick=()=>{
+        if(txt==='바로 선택할게요'){ccApplyRecommend(rec);return;}
+        document.getElementById('cc-input').value=txt;ccSend();
+      };
+      chips.appendChild(b);
+    });
+    body.appendChild(chips);
   }
   body.scrollTop=body.scrollHeight;
 }
@@ -2603,16 +2692,20 @@ function ccHideTyping(){
 function ccGreet(){
   const body=document.getElementById('cc-body');
   body.innerHTML='';
-  const welcome={role:'assistant',content:'안녕하세요, VETTI 베티입니다.\n오늘은 어떤 제품을 찾고 계신지 편하게 말씀해 주세요. 일상에서 쓰실 건지, 특별한 자리를 위한 건지부터 여쭤봐도 될까요?',t:ccTime()};
+  const welcome={role:'assistant',content:'안녕하세요, VETTI 큐레이터 베티입니다.\n편하게 말씀해 주세요. 어떤 상황에 사용하실 가방을 찾고 계신가요?',t:ccTime()};
   ccRenderMessage(welcome);
-  // Quick replies
   const chipRow=document.createElement('div');
   chipRow.className='cc-suggest';
-  ['일상용 가방 추천','선물용 가방','특별한 자리용','추천받지 말고 바로 선택'].forEach(txt=>{
+  [
+    '일상에서 쓸 데일리 가방',
+    '선물용으로 추천받고 싶어요',
+    '특별한 자리를 위한 가방',
+    '소재·색상 먼저 보고 싶어요',
+  ].forEach(txt=>{
     const b=document.createElement('button');
     b.className='cc-chip';b.textContent=txt;
     b.onclick=()=>{
-      if(txt==='추천받지 말고 바로 선택'){ccToggle(false);go('s-step1');return;}
+      if(txt==='소재·색상 먼저 보고 싶어요'){ccToggle(false);go('s-step1');return;}
       document.getElementById('cc-input').value=txt;ccSend();
     };
     chipRow.appendChild(b);
