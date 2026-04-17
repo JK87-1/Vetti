@@ -2753,10 +2753,12 @@ function ccRenderMessage(m,opts){
     chips.className='cc-suggest';
     ['다른 색상 추천','다른 소재 추천','가격이 궁금해요','바로 선택할게요'].forEach(txt=>{
       const b=document.createElement('button');
+      b.type='button';
       b.className='cc-chip';b.textContent=txt;
-      b.onclick=()=>{
+      b.onclick=(e)=>{
+        e.preventDefault();e.stopPropagation();
         if(txt==='바로 선택할게요'){ccApplyRecommend(rec);return;}
-        document.getElementById('cc-input').value=txt;ccSend();
+        ccSend(txt);
       };
       chips.appendChild(b);
     });
@@ -2810,10 +2812,12 @@ function ccGreet(){
     '소재·색상 먼저 보고 싶어요',
   ].forEach(txt=>{
     const b=document.createElement('button');
+    b.type='button';
     b.className='cc-chip';b.textContent=txt;
-    b.onclick=()=>{
+    b.onclick=(e)=>{
+      e.preventDefault();e.stopPropagation();
       if(txt==='소재·색상 먼저 보고 싶어요'){ccToggle(false);go('s-step1');return;}
-      document.getElementById('cc-input').value=txt;ccSend();
+      ccSend(txt);
     };
     chipRow.appendChild(b);
   });
@@ -2873,12 +2877,12 @@ function ccStopTeaser(){
   if(CC_TEASER_TIMER){clearInterval(CC_TEASER_TIMER);CC_TEASER_TIMER=null;}
   ccHideTeaser(false);
 }
-async function ccSend(){
+async function ccSend(directTxt){
   if(CC_BUSY) return;
   const inp=document.getElementById('cc-input');
-  const txt=inp.value.trim();
+  const txt=directTxt||(inp?inp.value.trim():'');
   if(!txt) return;
-  inp.value='';inp.style.height='auto';
+  if(inp){inp.value='';inp.style.height='auto';}
   const userMsg={role:'user',content:txt,t:ccTime()};
   if(attachedImg) userMsg.img=attachedImg;
   CC_MSGS.push(userMsg);
