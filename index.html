@@ -2984,20 +2984,15 @@ function ccClearImg(){
   if(prev) prev.style.display='none';
 }
 
-// Event delegation for all cc-chip clicks
-document.addEventListener('DOMContentLoaded',()=>{
-  const ccBody=document.getElementById('cc-body');
-  if(ccBody){
-    ccBody.addEventListener('click',function(e){
-      const chip=e.target.closest('[data-cc]');
-      if(!chip) return;
-      e.preventDefault();e.stopPropagation();
-      const txt=chip.getAttribute('data-cc');
-      console.log('[VETTI] chip delegate click:',txt);
-      ccChipClick(txt);
-    });
-  }
-});
+// Event delegation on document level for cc-chips
+document.addEventListener('click',function(e){
+  const chip=e.target.closest('[data-cc]');
+  if(!chip) return;
+  e.preventDefault();e.stopPropagation();
+  const txt=chip.getAttribute('data-cc');
+  alert('칩 클릭: '+txt);
+  ccChipClick(txt);
+},true);
 
 // Enter to send, Shift+Enter newline, auto-grow
 document.addEventListener('DOMContentLoaded',()=>{
