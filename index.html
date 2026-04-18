@@ -692,6 +692,47 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 }
 .ob-skip:hover{color:var(--black);}
 
+/* ══════════ CUSTOM VIEW SELECTION ══════════ */
+.cv-desc{
+  font-size:12px;color:var(--gray2);margin-bottom:14px;line-height:1.5;
+}
+.cv-view-card{
+  border:1px solid var(--gray5);border-radius:8px;
+  padding:14px;margin-bottom:12px;background:#fff;
+}
+.cv-view-title{
+  font-size:12px;font-weight:700;color:var(--black);
+  letter-spacing:.06em;margin-bottom:10px;
+}
+.cv-options{display:flex;flex-direction:column;gap:8px;}
+.cv-option{
+  display:flex;align-items:flex-start;gap:10px;
+  border:1px solid var(--gray5);border-radius:6px;
+  padding:12px;cursor:pointer;transition:all .15s;
+}
+.cv-option.on,.cv-option:has(input:checked){
+  border-color:var(--black);background:#FAFAF8;
+}
+.cv-option input{margin-top:2px;accent-color:var(--black);}
+.cv-option-name{font-size:13px;font-weight:700;color:var(--black);}
+.cv-option-sub{font-size:11px;color:var(--gray3);margin-top:2px;}
+.cv-upload{margin-top:10px;}
+.cv-upload-btn{
+  width:100%;padding:12px;border:1px dashed var(--gray4);
+  border-radius:6px;background:#FAFAF8;
+  font-size:12px;font-weight:600;color:var(--gray2);
+  cursor:pointer;font-family:var(--font);
+}
+.cv-upload-btn:hover{background:#F0ECE6;}
+.cv-upload-preview{margin-top:8px;text-align:center;}
+.cv-upload-preview img{
+  max-width:160px;max-height:120px;border-radius:6px;
+  border:1px solid var(--gray5);object-fit:contain;
+}
+.cv-upload-preview .cv-status{
+  font-size:10px;color:var(--gray3);margin-top:6px;
+}
+
 /* ══════════ CUSTOM SCHEMATIC LOADING ══════════ */
 .cs-loading{
   position:fixed;inset:0;z-index:1500;
@@ -1375,6 +1416,64 @@ body.has-bottombar .cc-teaser{bottom:154px;}
              oninput="this.value=this.value.toUpperCase();S.mono=this.value;">
       <div class="mono-hint">영문 이니셜 예: JK / VTI / LEU</div>
     </div>
+
+    <!-- 커스텀 디자인: 측면/후면 선택 (customDesign일 때만 표시) -->
+    <div class="opt custom-views-opt" id="custom-views-section" style="display:none;margin-top:0;padding-bottom:24px;">
+      <div class="opt-label">Side & Back Design</div>
+      <div class="cv-desc">측면과 후면 디자인을 선택해 주세요.</div>
+
+      <!-- 측면 -->
+      <div class="cv-view-card">
+        <div class="cv-view-title">측면 (SIDE)</div>
+        <div class="cv-options">
+          <label class="cv-option on" id="cv-side-rec">
+            <input type="radio" name="cv-side" value="recommend" checked onchange="cvSideMode('recommend')">
+            <div class="cv-option-body">
+              <div class="cv-option-name">추천 구조 사용</div>
+              <div class="cv-option-sub">토트형 표준 측면 구조를 적용합니다</div>
+            </div>
+          </label>
+          <label class="cv-option" id="cv-side-custom">
+            <input type="radio" name="cv-side" value="custom" onchange="cvSideMode('custom')">
+            <div class="cv-option-body">
+              <div class="cv-option-name">참고 이미지 업로드</div>
+              <div class="cv-option-sub">원하시는 측면 디자인 이미지를 업로드해 주세요</div>
+            </div>
+          </label>
+        </div>
+        <div class="cv-upload" id="cv-side-upload" style="display:none;">
+          <input type="file" id="cv-side-file" accept="image/*" style="display:none;" onchange="cvOnFile('side',event)">
+          <button type="button" class="cv-upload-btn" onclick="document.getElementById('cv-side-file').click()">📷 측면 이미지 선택</button>
+          <div class="cv-upload-preview" id="cv-side-preview"></div>
+        </div>
+      </div>
+
+      <!-- 후면 -->
+      <div class="cv-view-card">
+        <div class="cv-view-title">후면 (BACK)</div>
+        <div class="cv-options">
+          <label class="cv-option on" id="cv-back-rec">
+            <input type="radio" name="cv-back" value="recommend" checked onchange="cvBackMode('recommend')">
+            <div class="cv-option-body">
+              <div class="cv-option-name">추천 구조 사용</div>
+              <div class="cv-option-sub">토트형 표준 후면 구조를 적용합니다</div>
+            </div>
+          </label>
+          <label class="cv-option" id="cv-back-custom">
+            <input type="radio" name="cv-back" value="custom" onchange="cvBackMode('custom')">
+            <div class="cv-option-body">
+              <div class="cv-option-name">참고 이미지 업로드</div>
+              <div class="cv-option-sub">원하시는 후면 디자인 이미지를 업로드해 주세요</div>
+            </div>
+          </label>
+        </div>
+        <div class="cv-upload" id="cv-back-upload" style="display:none;">
+          <input type="file" id="cv-back-file" accept="image/*" style="display:none;" onchange="cvOnFile('back',event)">
+          <button type="button" class="cv-upload-btn" onclick="document.getElementById('cv-back-file').click()">📷 후면 이미지 선택</button>
+          <div class="cv-upload-preview" id="cv-back-preview"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="bottom-bar">
@@ -1595,7 +1694,11 @@ const HWS = [
 ];
 const BASE=2400000;
 
-const S={mat:'croc',col:'burg',sz:'medium',hw:'gold',mono:'',cv:1,rv:1,customImg:null,customDesign:false};
+const S={mat:'croc',col:'burg',sz:'medium',hw:'gold',mono:'',cv:1,rv:1,
+  customImg:null,customDesign:false,customSchematicUrl:null,
+  customSideImg:null,customSideSchematic:null,
+  customBackImg:null,customBackSchematic:null,
+  customStructure:'tote'};
 const gm=()=>MATS.find(m=>m.id===S.mat);
 const gc=()=>COLS.find(c=>c.id===S.col);
 const gs=()=>SZS.find(s=>s.id===S.sz);
@@ -1779,7 +1882,7 @@ function go(id){
   const withBar=['s-step1','s-result','s-workorder'].includes(id);
   document.body.classList.toggle('has-bottombar',withBar);
   if(id==='s-workorder') startWOGeneration();
-  if(id==='s-step1') {initStep1();updatePrice();initCustomSchematic();}
+  if(id==='s-step1') {initStep1();updatePrice();initCustomSchematic();initCustomViewSection();}
   if(id==='s-orders') renderOrders();
 }
 
@@ -1845,6 +1948,54 @@ function deleteOrder(i){
 
 function scrollToSpecs(){
   document.getElementById('spec-section').scrollIntoView({behavior:'smooth'});
+}
+
+// ── 커스텀 뷰(측면/후면) 선택 ──────────────────────────
+function cvSideMode(mode){
+  document.getElementById('cv-side-upload').style.display=mode==='custom'?'block':'none';
+  document.querySelectorAll('[name="cv-side"]').forEach(r=>{
+    r.closest('.cv-option').classList.toggle('on',r.checked);
+  });
+  if(mode==='recommend'){S.customSideImg=null;S.customSideSchematic=null;}
+}
+function cvBackMode(mode){
+  document.getElementById('cv-back-upload').style.display=mode==='custom'?'block':'none';
+  document.querySelectorAll('[name="cv-back"]').forEach(r=>{
+    r.closest('.cv-option').classList.toggle('on',r.checked);
+  });
+  if(mode==='recommend'){S.customBackImg=null;S.customBackSchematic=null;}
+}
+async function cvOnFile(view,e){
+  const file=e.target.files?.[0];
+  if(!file) return;
+  const b64=await ccResizeImg(file,512);
+  const previewEl=document.getElementById('cv-'+view+'-preview');
+  if(view==='side'){S.customSideImg=b64;S.customSideSchematic=null;}
+  else{S.customBackImg=b64;S.customBackSchematic=null;}
+  if(previewEl){
+    previewEl.innerHTML=`<img src="${b64}" alt="${view} reference"/><div class="cv-status">업로드 완료 · AI RENDER 시 도식화 자동 생성</div>`;
+  }
+  e.target.value='';
+  toast((view==='side'?'측면':'후면')+' 참고 이미지 업로드됨');
+}
+function initCustomViewSection(){
+  const sec=document.getElementById('custom-views-section');
+  if(!sec) return;
+  sec.style.display=S.customDesign?'block':'none';
+  if(!S.customDesign) return;
+  // Reset UI
+  document.getElementById('cv-side-upload').style.display=S.customSideImg?'block':'none';
+  document.getElementById('cv-back-upload').style.display=S.customBackImg?'block':'none';
+  if(S.customSideImg){
+    document.getElementById('cv-side-preview').innerHTML=`<img src="${S.customSideImg}" alt="side"/><div class="cv-status">업로드 완료</div>`;
+    document.querySelector('[name="cv-side"][value="custom"]').checked=true;
+    cvSideMode('custom');
+  }
+  if(S.customBackImg){
+    document.getElementById('cv-back-preview').innerHTML=`<img src="${S.customBackImg}" alt="back"/><div class="cv-status">업로드 완료</div>`;
+    document.querySelector('[name="cv-back"][value="custom"]').checked=true;
+    cvBackMode('custom');
+  }
 }
 
 // ── 커스텀 도식화 초기화 ──────────────────────────────
@@ -1923,17 +2074,24 @@ async function initCustomSchematic(){
 }
 
 // ── 렌더 (미리보기) ───────────────────────────────────
+function getCustomSchematicForView(n){
+  if(!S.customDesign) return null;
+  if(n===1 && S.customSchematicUrl) return S.customSchematicUrl;
+  if(n===2 && S.customSideSchematic) return S.customSideSchematic;
+  if(n===3 && S.customBackSchematic) return S.customBackSchematic;
+  return null;
+}
 async function renderPreview(){
   const cv=document.getElementById('preview-cv');
-  // Custom design: show custom schematic image instead of RENÉE
-  if(S.customDesign && S.customSchematicUrl){
+  const customUrl=getCustomSchematicForView(S.cv);
+  if(customUrl){
     const img=new Image();
     img.crossOrigin='anonymous';
     img.onload=()=>{
       cv.width=img.width;cv.height=img.height;cv.style.maxWidth='100%';
       cv.getContext('2d').drawImage(img,0,0);
     };
-    img.src=S.customSchematicUrl;
+    img.src=customUrl;
     return;
   }
   const cache=await loadImg(S.mat,S.cv);
@@ -2134,14 +2292,15 @@ async function generateGPTImage(n){
   const bkey=`${customPrefix}${S.mat}_${S.col}_${S.hw}_${S.sz}_${n}`;
   if(GPT_RENDER_CACHE[lkey]) return GPT_RENDER_CACHE[lkey];
 
-  // Custom design: use custom schematic as source instead of RENÉE
+  // Custom design: use view-specific custom schematic as source
   let srcUrl;
-  if(S.customDesign && S.customSchematicUrl){
-    srcUrl=S.customSchematicUrl;
-    console.log('[VETTI] render using CUSTOM schematic');
+  const customSrc=getCustomSchematicForView(n);
+  if(customSrc){
+    srcUrl=customSrc;
+    console.log('[VETTI] render using CUSTOM schematic for view',n);
   } else {
     srcUrl=IMGS?.[S.mat]?.[n];
-    console.log('[VETTI] render using RENÉE, customDesign=',S.customDesign,'schematicUrl=',!!S.customSchematicUrl);
+    console.log('[VETTI] render using RENÉE for view',n);
   }
   if(!srcUrl) throw new Error('NO_SOURCE_IMG');
   let paddedBlob;
@@ -2267,6 +2426,17 @@ function renderCurrentHD(){setRV(S.rv||1,{render:true});}
 
 // ── AI 렌더링 흐름 ───────────────────────────────────
 async function goAI(){
+  // Generate side/back schematics from uploaded custom images before going to result
+  if(S.customDesign){
+    if(S.customSideImg && !S.customSideSchematic){
+      try{S.customSideSchematic=await generateCustomSchematic(S.customSideImg);}
+      catch(e){console.warn('Side schematic failed',e);S.customSideSchematic=S.customSideImg;}
+    }
+    if(S.customBackImg && !S.customBackSchematic){
+      try{S.customBackSchematic=await generateCustomSchematic(S.customBackImg);}
+      catch(e){console.warn('Back schematic failed',e);S.customBackSchematic=S.customBackImg;}
+    }
+  }
   go('s-result');
   const loading=document.getElementById('ai-loading');
   const result=document.getElementById('ai-result');
