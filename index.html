@@ -694,8 +694,8 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 
 /* ══════════ CUSTOM SCHEMATIC LOADING ══════════ */
 .cs-loading{
-  position:absolute;inset:0;z-index:6;
-  background:rgba(245,243,240,.95);
+  position:fixed;inset:0;z-index:1500;
+  background:#F5F3F0;
   display:flex;align-items:center;justify-content:center;
 }
 .cs-loading-inner{
@@ -1341,19 +1341,6 @@ body.has-bottombar .cc-teaser{bottom:154px;}
       <canvas id="preview-cv"></canvas>
       <div class="sketch-badge" id="view-badge">정면</div>
       <div class="sketch-mat-tag" id="mat-tag">악어가죽 · 버건디</div>
-      <!-- Custom schematic loading overlay -->
-      <div class="cs-loading" id="cs-loading" style="display:none;">
-        <div class="cs-loading-inner">
-          <div class="cs-loading-icon">
-            <svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="#000" stroke-width="2" stroke-dasharray="80 40" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 22 22" to="360 22 22" dur="1.2s" repeatCount="indefinite"/></circle></svg>
-          </div>
-          <div class="cs-loading-title">도식화 생성 중</div>
-          <div class="cs-loading-sub" id="cs-loading-sub">고객 디자인을 분석하고 있습니다</div>
-          <div class="cs-loading-bar"><div class="cs-loading-fill" id="cs-loading-fill"></div></div>
-          <div class="cs-loading-pct" id="cs-loading-pct">0%</div>
-          <div class="cs-loading-elapsed" id="cs-loading-elapsed">0s</div>
-        </div>
-      </div>
     </div>
 
     <!-- 소재 -->
@@ -2151,8 +2138,10 @@ async function generateGPTImage(n){
   let srcUrl;
   if(S.customDesign && S.customSchematicUrl){
     srcUrl=S.customSchematicUrl;
+    console.log('[VETTI] render using CUSTOM schematic');
   } else {
     srcUrl=IMGS?.[S.mat]?.[n];
+    console.log('[VETTI] render using RENÉE, customDesign=',S.customDesign,'schematicUrl=',!!S.customSchematicUrl);
   }
   if(!srcUrl) throw new Error('NO_SOURCE_IMG');
   let paddedBlob;
@@ -2321,12 +2310,16 @@ async function goAI(){
   }
 
   if(!aiText){
-    const fb={
-      croc:`${col.ko} ${mat.nm} RENÉE는 나일강 유역 CITES 인증 A+ 등급의 원피로 제작됩니다. 자연스러운 비늘 패턴과 ${col.ko} 컬러가 어우러져 독보적인 존재감을 완성합니다. 습식태닝 60일 공정으로 사용할수록 깊어지는 파티나가 형성되는 헤리티지 피스입니다.`,
-      lizard:`${col.ko} 리자드 RENÉE는 섬세한 격자 비늘이 ${col.ko} 컬러와 만나 독특한 패턴 미학을 완성합니다. 악어가죽 대비 경량으로 일상의 편리함과 희소성을 동시에 선사합니다. 크롬태닝 처리로 균일한 색상과 내구성을 보장합니다.`,
-      ostrich:`${col.ko} 오스트리치 RENÉE는 남아프리카 타조 가죽 특유의 퀼 포인트 패턴이 ${col.ko} 컬러와 만나 희소하고 입체적인 아름다움을 완성합니다. 베지터블태닝 45일 공정으로 처리되어 유연함과 내구성을 동시에 갖추며, 독특한 에이징 특성으로 시간이 지날수록 깊어지는 매력을 선사합니다.`,
-    };
-    aiText=fb[S.mat]||fb.croc;
+    if(S.customDesign){
+      aiText=`${col.ko} ${mat.nm} 소재로 고객님이 제공하신 디자인을 맞춤 제작합니다. ${mat.nm}의 고유한 질감과 ${col.ko} 컬러가 만나 세상에 하나뿐인 작품이 완성됩니다. 40년 경력 장인이 고객님의 디자인을 충실히 구현하며, 모든 공정은 수작업으로 진행됩니다.`;
+    } else {
+      const fb={
+        croc:`${col.ko} ${mat.nm} RENÉE는 나일강 유역 CITES 인증 A+ 등급의 원피로 제작됩니다. 자연스러운 비늘 패턴과 ${col.ko} 컬러가 어우러져 독보적인 존재감을 완성합니다. 습식태닝 60일 공정으로 사용할수록 깊어지는 파티나가 형성되는 헤리티지 피스입니다.`,
+        lizard:`${col.ko} 리자드 RENÉE는 섬세한 격자 비늘이 ${col.ko} 컬러와 만나 독특한 패턴 미학을 완성합니다. 악어가죽 대비 경량으로 일상의 편리함과 희소성을 동시에 선사합니다. 크롬태닝 처리로 균일한 색상과 내구성을 보장합니다.`,
+        ostrich:`${col.ko} 오스트리치 RENÉE는 남아프리카 타조 가죽 특유의 퀼 포인트 패턴이 ${col.ko} 컬러와 만나 희소하고 입체적인 아름다움을 완성합니다. 베지터블태닝 45일 공정으로 처리되어 유연함과 내구성을 동시에 갖추며, 독특한 에이징 특성으로 시간이 지날수록 깊어지는 매력을 선사합니다.`,
+      };
+      aiText=fb[S.mat]||fb.croc;
+    }
   }
 
   if(!isCached) await new Promise(r=>setTimeout(r,200));
@@ -2338,7 +2331,7 @@ async function goAI(){
   // 스펙 미니
   const sm=document.getElementById('spec-mini');
   if(sm) sm.innerHTML=[
-    {k:'Design',v:'RENÉE'},{k:'Material',v:mat.nm},
+    {k:'Design',v:S.customDesign?'CUSTOM':'RENÉE'},{k:'Material',v:mat.nm},
     {k:'Origin',v:mat.origin},{k:'Tannage',v:mat.tan},
     {k:'Colour',v:col.nm},{k:'Hardware',v:hw.nm},
     {k:'Size',v:sz.nm+' '+sz.dim},{k:'Lining',v:mat.lining},
@@ -3019,7 +3012,8 @@ function ccApplyRecommend(rec){
   if(rec.custom || lastImg){
     S.customDesign=true;
     S.customImg=lastImg?lastImg.img:null;
-    S.customSchematicUrl=null; // reset so new schematic is generated
+    S.customSchematicUrl=null;
+    console.log('[VETTI] CUSTOM DESIGN activated, img:',!!S.customImg);
   } else {
     S.customDesign=false;
     S.customImg=null;
@@ -3270,6 +3264,20 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // 홈 캔버스 없음 (에디토리얼 이미지 사용)
 });
 </script>
+<!-- ══ CUSTOM SCHEMATIC LOADING (전체화면) ═════════════ -->
+<div class="cs-loading" id="cs-loading" style="display:none;">
+  <div class="cs-loading-inner">
+    <div class="cs-loading-icon">
+      <svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="none" stroke="#000" stroke-width="2" stroke-dasharray="85 40" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="1.2s" repeatCount="indefinite"/></circle></svg>
+    </div>
+    <div class="cs-loading-title">도식화 생성 중</div>
+    <div class="cs-loading-sub" id="cs-loading-sub">고객 디자인을 분석하고 있습니다</div>
+    <div class="cs-loading-bar"><div class="cs-loading-fill" id="cs-loading-fill"></div></div>
+    <div class="cs-loading-pct" id="cs-loading-pct">0%</div>
+    <div class="cs-loading-elapsed" id="cs-loading-elapsed">0s</div>
+  </div>
+</div>
+
 <!-- ══ ONBOARDING ═════════════════════════════════════ -->
 <div class="ob-overlay" id="ob-overlay">
   <div class="ob-sheet">
