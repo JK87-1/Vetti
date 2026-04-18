@@ -1745,7 +1745,7 @@ function go(id){
   const withBar=['s-step1','s-result','s-workorder'].includes(id);
   document.body.classList.toggle('has-bottombar',withBar);
   if(id==='s-workorder') startWOGeneration();
-  if(id==='s-step1') {initStep1();updatePrice();}
+  if(id==='s-step1') {initStep1();updatePrice();initCustomSchematic();}
   if(id==='s-orders') renderOrders();
 }
 
@@ -1813,11 +1813,42 @@ function scrollToSpecs(){
   document.getElementById('spec-section').scrollIntoView({behavior:'smooth'});
 }
 
+// ── 커스텀 도식화 초기화 ──────────────────────────────
+async function initCustomSchematic(){
+  if(!S.customDesign || !S.customImg) return;
+  const badge=document.getElementById('sketch-mat-tag');
+  const cv=document.getElementById('preview-cv');
+  if(badge) badge.textContent='CUSTOM DESIGN · 도식화 생성 중...';
+  try{
+    const url=await generateCustomSchematic(S.customImg);
+    S.customSchematicUrl=url;
+    if(badge) badge.textContent='CUSTOM DESIGN';
+    renderPreview();
+  }catch(e){
+    console.warn('Custom schematic failed:',e.message);
+    if(badge) badge.textContent='CUSTOM · 도식화 생성 실패';
+    S.customSchematicUrl=null;
+    renderPreview();
+  }
+}
+
 // ── 렌더 (미리보기) ───────────────────────────────────
 async function renderPreview(){
+  const cv=document.getElementById('preview-cv');
+  // Custom design: show custom schematic image instead of RENÉE
+  if(S.customDesign && S.customSchematicUrl){
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=()=>{
+      cv.width=img.width;cv.height=img.height;cv.style.maxWidth='100%';
+      cv.getContext('2d').drawImage(img,0,0);
+    };
+    img.src=S.customSchematicUrl;
+    return;
+  }
   const cache=await loadImg(S.mat,S.cv);
   const c=gc();
-  colorize(document.getElementById('preview-cv'),cache,c.r,c.g,c.b);
+  colorize(cv,cache,c.r,c.g,c.b);
 }
 
 // ── 뷰 전환 ────────────────────────────────────────────
@@ -2200,6 +2231,48 @@ async function goAI(){
 }
 
 // ── 작업지시서 ───────────────────────────────────────
+// ── 커스텀 도식화 생성 ─────────────────────────────────
+async function generateCustomSchematic(imgDataUrl){
+  if(!imgDataUrl) throw new Error('NO_IMG');
+  const cacheKey='custom_schematic_'+imgDataUrl.slice(-40).replace(/[^a-zA-Z0-9]/g,'');
+  if(GPT_RENDER_CACHE[cacheKey]) return GPT_RENDER_CACHE[cacheKey];
+
+  const paddedBlob=await padToSquareBlob(imgDataUrl,1024);
+  const fd=new FormData();
+  fd.append('model','gpt-image-1');
+  fd.append('image',paddedBlob,'reference.png');
+  fd.append('prompt',`Convert this handbag photograph into a clean flat technical fashion illustration (도식화/플랫 스케치).
+
+REQUIREMENTS:
+- Pure white background (#FFFFFF)
+- Thin precise BLACK outlines only (1-2px weight)
+- NO color fill — leave the bag body white/empty inside the outlines
+- NO shading, NO shadows, NO gradients, NO texture
+- Front elevation view, perfectly centered
+- Show ALL structural details: seam lines, stitching lines, hardware positions (clasps, D-rings, feet), handle attachment points, zipper lines
+- Style: fashion design technical flat drawing, similar to garment spec sheets
+- The outline must form a CLOSED shape (suitable for digital color fill later)
+- Keep the EXACT proportions and silhouette of the input bag
+- No text, no labels, no dimensions, no mannequin`);
+  fd.append('size','1024x1024');
+  fd.append('n','1');
+  fd.append('quality','high');
+
+  console.log('[VETTI] generating custom schematic...');
+  const bkey='custom_schematic_'+Date.now();
+  const resp=await fetch(API_BASE+'/api/image?key='+encodeURIComponent(bkey),{
+    method:'POST',body:fd
+  });
+  if(!resp.ok) throw new Error('API '+resp.status);
+  const d=await resp.json();
+  const url=d.url||d.dataUrl;
+  if(!url) throw new Error('NO_IMAGE');
+  GPT_RENDER_CACHE[cacheKey]=url;
+  persistCache();
+  console.log('[VETTI] custom schematic done');
+  return url;
+}
+
 // ── 3뷰 프리워밍 ──────────────────────────────────────
 const PREWARM_INFLIGHT = new Set();
 function prewarmOtherViews(currentView){
