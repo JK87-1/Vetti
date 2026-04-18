@@ -2364,11 +2364,26 @@ async function setRV(n,opts){
   const badge=document.getElementById('rs-badge');
   const hdBtn=document.getElementById('hd-render-btn');
   const mat=gm(),col=gc();
-  const cacheKey=`${S.mat}|${S.col}|${S.hw}|${S.sz}|${n}`;
+  const customPrefix=S.customDesign?'custom_':'';
+  const cacheKey=`${customPrefix}${S.mat}|${S.col}|${S.hw}|${S.sz}|${n}`;
 
-  const showFallback=()=>{
+  const showFallback=async()=>{
+    // For custom designs, show custom schematic instead of RENÉE
+    const customUrl=getCustomSchematicForView(n);
+    if(customUrl){
+      const fallbackImg=new Image();
+      fallbackImg.crossOrigin='anonymous';
+      fallbackImg.onload=()=>{
+        cv.width=fallbackImg.width;cv.height=fallbackImg.height;cv.style.maxWidth='100%';
+        cv.getContext('2d').drawImage(fallbackImg,0,0);
+      };
+      fallbackImg.src=customUrl;
+      img.style.display='none';cv.style.display='block';
+      return;
+    }
     img.style.display='none';cv.style.display='block';
-    return loadImg(S.mat,n).then(c=>colorize(cv,c,col.r,col.g,col.b));
+    const c=await loadImg(S.mat,n);
+    colorize(cv,c,col.r,col.g,col.b);
   };
 
   if(GPT_RENDER_CACHE[cacheKey]){
