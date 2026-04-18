@@ -1909,15 +1909,26 @@ async function initCustomSchematic(){
   if(!S.customDesign || !S.customImg) return;
   const badge=document.getElementById('mat-tag');
   if(badge) badge.textContent='CUSTOM DESIGN';
+  // Check if already cached
+  const cacheKey='custom_schematic_'+S.customImg.slice(-40).replace(/[^a-zA-Z0-9]/g,'');
+  if(GPT_RENDER_CACHE[cacheKey]){
+    S.customSchematicUrl=GPT_RENDER_CACHE[cacheKey];
+    renderPreview();
+    return;
+  }
+  // Not cached — show loading and generate
   csShowLoading();
+  if(badge) badge.textContent='CUSTOM DESIGN · 생성 중';
   try{
     const url=await generateCustomSchematic(S.customImg);
     S.customSchematicUrl=url;
     csHideLoading();
+    if(badge) badge.textContent='CUSTOM DESIGN';
     renderPreview();
   }catch(e){
     console.warn('Custom schematic failed:',e.message);
     csHideLoading();
+    if(badge) badge.textContent='CUSTOM DESIGN';
     S.customSchematicUrl=S.customImg;
     renderPreview();
     toast('도식화 생성 실패 — 원본 이미지를 사용합니다');
@@ -2094,8 +2105,9 @@ function buildRenderPrompt(n){
   const strapRule=n===1
     ? `ABSOLUTELY CRITICAL: NO shoulder strap. NO crossbody strap. NO detachable strap. NO dangling strap. NO strap hanging from the sides. NO metal strap clasps or D-rings visible. Remove any strap entirely. Only the two short top handles on top of the bag are allowed. The bag must stand alone as a clean front silhouette with nothing extending beyond its left or right edges.`
     : `The top handles AND the detachable shoulder strap must be made of the exact same ${texture} in the identical ${col.nm} color as the bag body — no fabric, no nylon, no webbing, no contrasting material. The strap is a single continuous leather band with matching scale pattern and stitching.`;
-  return `Ultra-realistic studio product photograph of a structured luxury leather handbag, ${view} view. `+
-    `CRITICAL CONSTRAINT: the output MUST have the EXACT SAME outline, silhouette, aspect ratio, proportions, width-to-height ratio, handle shape, handle position, seam placement, and bounding box as the provided input image. Do not make the bag taller. Do not make the bag narrower. Do not add any element outside the input silhouette. Treat the input as a strict geometric template. `+
+  const isCustom=S.customDesign && S.customSchematicUrl;
+  return `Ultra-realistic studio product photograph of a ${isCustom?'custom-designed':'structured'} luxury leather handbag, ${view} view. `+
+    `CRITICAL CONSTRAINT: the output MUST have the EXACT SAME outline, silhouette, aspect ratio, proportions, width-to-height ratio, handle shape, handle position, seam placement, and bounding box as the provided input image. ${isCustom?'This is a CUSTOM DESIGN from a customer reference — preserve the unique shape and structure exactly as drawn in the schematic. Do NOT change the design to a different bag model.':''} Do not make the bag taller. Do not make the bag narrower. Do not add any element outside the input silhouette. Treat the input as a strict geometric template. `+
     `Replace ONLY the flat fill color and texture with: ${texture}. `+
     `Leather color: ${col.nm} / ${col.ko}, approx RGB(${col.r},${col.g},${col.b}), rich saturated tone, realistic highlights and micro-shadows on the scales. `+
     strapRule+' '+
@@ -2130,13 +2142,27 @@ async function padToSquareBlob(dataUrl,size){
   return await new Promise(res=>cvs.toBlob(b=>res(b),'image/png'));
 }
 async function generateGPTImage(n){
-  const lkey=`${S.mat}|${S.col}|${S.hw}|${S.sz}|${n}`;
-  const bkey=`${S.mat}_${S.col}_${S.hw}_${S.sz}_${n}`;
+  const customPrefix=S.customDesign?'custom_':'';
+  const lkey=`${customPrefix}${S.mat}|${S.col}|${S.hw}|${S.sz}|${n}`;
+  const bkey=`${customPrefix}${S.mat}_${S.col}_${S.hw}_${S.sz}_${n}`;
   if(GPT_RENDER_CACHE[lkey]) return GPT_RENDER_CACHE[lkey];
 
-  const srcDataUrl=IMGS?.[S.mat]?.[n];
-  if(!srcDataUrl) throw new Error('NO_SOURCE_IMG');
-  const paddedBlob=await padToSquareBlob(srcDataUrl,1024);
+  // Custom design: use custom schematic as source instead of RENÉE
+  let srcUrl;
+  if(S.customDesign && S.customSchematicUrl){
+    srcUrl=S.customSchematicUrl;
+  } else {
+    srcUrl=IMGS?.[S.mat]?.[n];
+  }
+  if(!srcUrl) throw new Error('NO_SOURCE_IMG');
+  let paddedBlob;
+  if(srcUrl.startsWith('http')){
+    const r=await fetch(srcUrl);
+    const b=await r.blob();
+    paddedBlob=b;
+  } else {
+    paddedBlob=await padToSquareBlob(srcUrl,1024);
+  }
   const fd=new FormData();
   fd.append('model','gpt-image-1');
   fd.append('image',paddedBlob,'silhouette.png');
