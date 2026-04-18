@@ -1816,9 +1816,24 @@ function scrollToSpecs(){
 // ── 커스텀 도식화 초기화 ──────────────────────────────
 async function initCustomSchematic(){
   if(!S.customDesign || !S.customImg) return;
-  const badge=document.getElementById('sketch-mat-tag');
+  const badge=document.getElementById('mat-tag');
   const cv=document.getElementById('preview-cv');
   if(badge) badge.textContent='CUSTOM DESIGN · 도식화 생성 중...';
+  // Show customer's original image immediately as placeholder
+  const tmpImg=new Image();
+  tmpImg.onload=()=>{
+    cv.width=tmpImg.width;cv.height=tmpImg.height;cv.style.maxWidth='100%';
+    const ctx=cv.getContext('2d');
+    ctx.drawImage(tmpImg,0,0);
+    // Add "generating" overlay
+    ctx.fillStyle='rgba(255,255,255,0.7)';
+    ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.fillStyle='#000';
+    ctx.font='bold 14px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('도식화 생성 중...',cv.width/2,cv.height/2);
+  };
+  tmpImg.src=S.customImg;
   try{
     const url=await generateCustomSchematic(S.customImg);
     S.customSchematicUrl=url;
@@ -1826,9 +1841,11 @@ async function initCustomSchematic(){
     renderPreview();
   }catch(e){
     console.warn('Custom schematic failed:',e.message);
-    if(badge) badge.textContent='CUSTOM · 도식화 생성 실패';
-    S.customSchematicUrl=null;
+    if(badge) badge.textContent='CUSTOM DESIGN';
+    // Fallback: just show original image
+    S.customSchematicUrl=S.customImg;
     renderPreview();
+    toast('도식화 생성 실패 — 원본 이미지를 사용합니다');
   }
 }
 
@@ -2836,8 +2853,9 @@ function ccRenderMessage(m,opts){
     const szNames={mini:'Mini',medium:'Medium',large:'Large'};
     const card=document.createElement('div');
     card.className='cc-rec-card';
+    const hasUploadedImg=CC_MSGS.some(m=>m.img);
     card.innerHTML=`
-      <div class="cc-rec-title">${rec.custom?'맞춤 디자인 제작':'RENÉE · 맞춤 추천'}</div>
+      <div class="cc-rec-title">${(rec.custom||hasUploadedImg)?'맞춤 디자인 제작':'RENÉE · 맞춤 추천'}</div>
       <div class="cc-rec-specs">
         <div class="cc-rec-spec"><span class="cc-rec-label">소재</span><span class="cc-rec-val">${matNames[rec.mat]||rec.mat}</span></div>
         <div class="cc-rec-spec"><span class="cc-rec-label">색상</span><span class="cc-rec-val">${colNames[rec.col]||rec.col}</span></div>
@@ -2880,14 +2898,16 @@ function ccApplyRecommend(rec){
   if(COLS.find(c=>c.id===col)) S.col=col;
   if(HWS.find(h=>h.id===hw)) S.hw=hw;
   if(SZS.find(s=>s.id===sz)) S.sz=sz;
-  // Custom design: save last uploaded image as reference
-  if(rec.custom){
+  // Custom design: detect if user uploaded any reference image in conversation
+  const lastImg=CC_MSGS.slice().reverse().find(m=>m.img);
+  if(rec.custom || lastImg){
     S.customDesign=true;
-    const lastImg=CC_MSGS.slice().reverse().find(m=>m.img);
     S.customImg=lastImg?lastImg.img:null;
+    S.customSchematicUrl=null; // reset so new schematic is generated
   } else {
     S.customDesign=false;
     S.customImg=null;
+    S.customSchematicUrl=null;
   }
   ccToggle(false);
   go('s-step1');
