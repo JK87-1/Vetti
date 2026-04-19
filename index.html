@@ -778,7 +778,60 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 }
 #admin-token-input:focus{border-color:var(--black);}
 .admin-err{font-size:11px;color:#8B0000;margin-top:10px;min-height:14px;}
-.admin-toolbar{display:flex;gap:8px;margin-bottom:14px;}
+.admin-toolbar{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap;}
+.admin-search{
+  flex:1;min-width:160px;padding:9px 12px;
+  border:1px solid var(--gray5);border-radius:3px;
+  font-family:var(--font);font-size:12px;outline:none;background:#fff;
+}
+.admin-search:focus{border-color:var(--black);}
+.admin-filters{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.admin-filter{
+  padding:6px 10px;border:1px solid var(--gray5);border-radius:3px;
+  background:#fff;font-family:var(--font);font-size:10.5px;font-weight:700;
+  color:var(--gray2);letter-spacing:.06em;cursor:pointer;
+}
+.admin-filter.on{background:var(--black);color:#fff;border-color:var(--black);}
+.admin-filter-count{font-size:9px;opacity:.7;margin-left:3px;font-weight:500;}
+
+/* 상태 뱃지 */
+.admin-status{
+  flex:none;display:inline-flex;align-items:center;gap:5px;
+  padding:4px 8px;border-radius:3px;
+  font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+}
+.admin-status.received  {background:#F0EFEA;color:#554D3A;}
+.admin-status.crafting  {background:#FFF4E5;color:#7A4D00;}
+.admin-status.qc        {background:#EFF3FB;color:#1E3D80;}
+.admin-status.shipping  {background:#E8F5EE;color:#0F5D2F;}
+.admin-status.delivered {background:#E6F2F0;color:#0A453B;}
+.admin-status.cancelled {background:#F4E8E8;color:#7A1A1A;}
+.admin-status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* 상세 상태 변경 버튼 그룹 */
+.ad-status-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;
+}
+.ad-status-btn{
+  padding:8px 6px;border:1px solid var(--gray5);border-radius:3px;
+  background:#fff;font-family:var(--font);font-size:10px;font-weight:700;
+  letter-spacing:.06em;color:var(--gray2);cursor:pointer;text-align:center;
+  text-transform:uppercase;transition:all .15s;
+}
+.ad-status-btn.on{background:var(--black);color:#fff;border-color:var(--black);}
+.ad-status-btn:active{transform:scale(.97);}
+.ad-note-input{
+  display:block;width:100%;margin-top:10px;padding:10px 12px;
+  border:1px solid var(--gray5);border-radius:3px;
+  font-family:var(--font);font-size:12px;resize:vertical;min-height:60px;outline:none;
+}
+.ad-save-btn{
+  display:block;width:100%;margin-top:10px;padding:12px;
+  background:var(--black);color:#fff;border:none;border-radius:3px;
+  font-family:var(--font);font-size:11px;font-weight:800;letter-spacing:.14em;
+  cursor:pointer;text-transform:uppercase;
+}
+.ad-save-btn:disabled{opacity:.5;cursor:not-allowed;}
 .admin-btn{
   padding:9px 14px;border:1px solid var(--black);border-radius:3px;
   background:var(--black);color:#fff;font-family:var(--font);
@@ -2087,9 +2140,12 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 
     <div id="admin-main" style="display:none;">
       <div class="admin-toolbar">
-        <button class="admin-btn" onclick="adminLoadOrders()">↻ 새로고침</button>
+        <input type="search" id="admin-search" class="admin-search" placeholder="WO·이름·전화·소재·컬러 검색" oninput="adminRenderList()">
+        <button class="admin-btn" onclick="adminLoadOrders()" title="새로고침">↻</button>
+        <button class="admin-btn admin-btn-ghost" onclick="adminExportCSV()">CSV</button>
         <button class="admin-btn admin-btn-ghost" onclick="adminLogout()">로그아웃</button>
       </div>
+      <div class="admin-filters" id="admin-filters"></div>
       <div id="admin-list"></div>
     </div>
   </div>
@@ -3007,6 +3063,73 @@ function renderCurrentHD(){setRV(S.rv||1,{render:true});}
 
 // ── Three.js 3D 자유 회전 뷰어 ────────────────────────
 let V3D=null; // {scene, camera, renderer, controls, body, mat, raf, idleTimer}
+
+// 재질별 프로시저럴 bump 맵 생성 — 가죽 표면 relief 흉내
+function buildBumpCanvas(matId,size){
+  size=size||512;
+  const c=document.createElement('canvas');c.width=size;c.height=size;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#808080';ctx.fillRect(0,0,size,size); // 중립 그레이 = 평탄
+  const rng=()=>Math.random();
+
+  if(matId==='croc'){
+    // 크로커다일: 벨리 스케일 브릭 패턴 — 직사각 셀, 행마다 오프셋
+    const rows=22, cols=12;
+    const cellW=size/cols, cellH=size/rows;
+    for(let r=-1;r<=rows;r++){
+      const off=(r%2)?cellW/2:0;
+      for(let col=-1;col<=cols;col++){
+        const cx=col*cellW+off+cellW/2;
+        const cy=r*cellH+cellH/2;
+        const g=ctx.createRadialGradient(cx,cy,cellH*0.15,cx,cy,cellH*0.65);
+        g.addColorStop(0,'#B8B8B8');
+        g.addColorStop(0.7,'#909090');
+        g.addColorStop(1,'#3A3A3A'); // 가장자리 어두움 = 가라앉음
+        ctx.fillStyle=g;
+        ctx.fillRect(cx-cellW*0.48, cy-cellH*0.48, cellW*0.96, cellH*0.96);
+      }
+    }
+  } else if(matId==='lizard'){
+    // 리자드: 작은 불규칙 다각형 — 겹치는 원형 그라디언트로 tessellation 흉내
+    ctx.fillStyle='#707070';ctx.fillRect(0,0,size,size);
+    const n=1200;
+    for(let i=0;i<n;i++){
+      const x=rng()*size, y=rng()*size;
+      const rr=4+rng()*5;
+      const g=ctx.createRadialGradient(x,y,0.5,x,y,rr);
+      g.addColorStop(0,'#A8A8A8');
+      g.addColorStop(0.6,'#7E7E7E');
+      g.addColorStop(1,'#3E3E3E');
+      ctx.fillStyle=g;
+      ctx.beginPath();ctx.arc(x,y,rr,0,Math.PI*2);ctx.fill();
+    }
+  } else if(matId==='ostrich'){
+    // 오스트리치: 솟은 퀼 버프 — 밝은 하이라이트 + 하단 쉐도우
+    ctx.fillStyle='#6E6E6E';ctx.fillRect(0,0,size,size);
+    const n=140;
+    for(let i=0;i<n;i++){
+      const x=rng()*size, y=rng()*size;
+      const rr=7+rng()*5;
+      // 솟은 돔: 좌상단 밝고 우하단 어두움 (라이트가 왼쪽 위라고 가정)
+      const g=ctx.createRadialGradient(x-rr*0.3,y-rr*0.3,0.5,x,y,rr*1.1);
+      g.addColorStop(0,'#EAEAEA');
+      g.addColorStop(0.5,'#A8A8A8');
+      g.addColorStop(1,'#5E5E5E');
+      ctx.fillStyle=g;
+      ctx.beginPath();ctx.arc(x,y,rr,0,Math.PI*2);ctx.fill();
+    }
+  }
+  return c;
+}
+function buildBumpTexture(matId){
+  const cvs=buildBumpCanvas(matId,512);
+  const tex=new THREE.CanvasTexture(cvs);
+  tex.wrapS=THREE.RepeatWrapping;
+  tex.wrapT=THREE.RepeatWrapping;
+  tex.repeat.set(3,2);
+  tex.anisotropy=4;
+  return tex;
+}
 function toggle3D(){
   if(V3D){ exit3D(); return; }
   enter3D();
@@ -3060,17 +3183,23 @@ function enter3D(){
   shadow.rotation.x=-Math.PI/2; shadow.position.y=-0.72;
   scene.add(shadow);
 
-  // Bag material — 선택된 컬러 + 클리어코트로 가죽 느낌
+  // Bag material — 선택된 컬러 + 클리어코트 + 재질별 bump로 가죽 표면 표현
   const col=gc();
   const bagColor=new THREE.Color(col.r/255,col.g/255,col.b/255);
+  const bumpTex=buildBumpTexture(S.mat);
+  // 재질별 bump 강도: 크록이 가장 깊고, 리자드 중간, 오스트리치는 낮되 넓게
+  const bumpScale=S.mat==='croc'?0.035 : S.mat==='lizard'?0.022 : 0.028;
   const material=new THREE.MeshPhysicalMaterial({
     color:bagColor,
     roughness:0.55,
     metalness:0.0,
-    clearcoat:0.45,
-    clearcoatRoughness:0.22,
-    sheen:0.3,
+    clearcoat:S.mat==='ostrich'?0.18:0.5,  // 오스트리치는 매트
+    clearcoatRoughness:S.mat==='ostrich'?0.55:0.22,
+    sheen:S.mat==='lizard'?0.6:0.3,        // 리자드는 유광
     sheenColor:bagColor,
+    bumpMap:bumpTex,
+    bumpScale:bumpScale,
+    roughnessMap:bumpTex,                  // bump을 roughness에도 재사용 — 릴리프 깊은 곳이 덜 반짝
   });
 
   // Body — 사다리꼴 프로필 extrude (앞면 넓고 위가 살짝 좁은 토트)
@@ -3799,6 +3928,8 @@ async function sendWO(){
 
   const order={
     woNum,createdAt:now.toISOString(),
+    status:'received',
+    statusHistory:[{status:'received',at:now.toISOString()}],
     consent:{pipa:true,consentedAt:now.toISOString()},
     customer:{name,phone,email,addr,note},
     spec:{model:isCustom?'CUSTOM':'RENÉE',customDesign:isCustom,
@@ -3893,6 +4024,12 @@ async function sendWO(){
 
 // ── 관리자 대시보드 ───────────────────────────────────
 const ADMIN_TOKEN_KEY='vetti_admin_token';
+const STATUS_LABELS={
+  received:'접수됨', crafting:'제작 중', qc:'품질 검수',
+  shipping:'배송 준비', delivered:'배송 완료', cancelled:'취소',
+};
+const STATUS_ORDER=['received','crafting','qc','shipping','delivered','cancelled'];
+let _ADMIN_FILTER={q:'',status:''};
 function getAdminToken(){try{return sessionStorage.getItem(ADMIN_TOKEN_KEY)||'';}catch(e){return '';}}
 function setAdminTokenVal(t){try{sessionStorage.setItem(ADMIN_TOKEN_KEY,t);}catch(e){}}
 function clearAdminToken(){try{sessionStorage.removeItem(ADMIN_TOKEN_KEY);}catch(e){}}
@@ -3941,43 +4078,114 @@ async function adminLoadOrders(){
       return;
     }
     const d=await r.json();
-    const orders=d.orders||[];
-    const cntEl=document.getElementById('admin-count');
-    if(cntEl) cntEl.textContent=orders.length+' 건';
-    if(!orders.length){
-      listEl.innerHTML=`<div class="admin-empty">접수된 주문이 없습니다</div>`;
-      return;
-    }
-    listEl.innerHTML=orders.map((o,i)=>{
-      const dt=o.createdAt?new Date(o.createdAt).toLocaleString('ko-KR'):'—';
-      const isCustom=!!o.spec?.customDesign;
-      const cust=o.customer||{};
-      const sp=o.spec||{};
-      return `<div class="admin-order" onclick="showAdminDetail(${i})">
-        <div class="admin-order-head">
-          <div>
-            <div class="admin-order-num">${ccEscape(o.woNum||'—')}</div>
-            <div class="admin-order-date">${dt}</div>
-          </div>
-          ${isCustom?`<span class="admin-order-tag CUSTOM">CUSTOM</span>`:`<span class="admin-order-tag">RENÉE</span>`}
-        </div>
-        <div class="admin-order-grid">
-          <div class="admin-order-cell"><span>소재</span><b>${ccEscape(sp.material||'')}</b></div>
-          <div class="admin-order-cell"><span>컬러</span><b>${ccEscape(sp.colourKo||sp.colour||'')}</b></div>
-          <div class="admin-order-cell"><span>사이즈</span><b>${ccEscape(sp.size||'')}</b></div>
-          <div class="admin-order-cell"><span>HW</span><b>${ccEscape(sp.hardware||'')}</b></div>
-        </div>
-        <div class="admin-order-foot">
-          <div class="admin-order-cust">${ccEscape(cust.name||'—')} · ${ccEscape(cust.phone||'')}</div>
-          <div class="admin-order-total">${fmt(o.total||0)}</div>
-        </div>
-      </div>`;
-    }).join('');
-    // Cache for detail
-    window._ADMIN_ORDERS=orders;
+    window._ADMIN_ORDERS=(d.orders||[]).map(o=>({...o,status:o.status||'received'}));
+    adminRenderList();
   }catch(e){
     listEl.innerHTML=`<div class="admin-empty">네트워크 오류<br><span style="font-size:10px;">${ccEscape(e.message||'')}</span></div>`;
   }
+}
+
+function adminRenderList(){
+  const listEl=document.getElementById('admin-list');
+  const cntEl=document.getElementById('admin-count');
+  const filtersEl=document.getElementById('admin-filters');
+  const searchEl=document.getElementById('admin-search');
+  const all=window._ADMIN_ORDERS||[];
+  _ADMIN_FILTER.q=(searchEl?searchEl.value:'').trim().toLowerCase();
+
+  // 상태 필터 칩 렌더 (카운트 포함)
+  if(filtersEl){
+    const counts={};
+    all.forEach(o=>{const s=o.status||'received'; counts[s]=(counts[s]||0)+1;});
+    const chips=[`<button class="admin-filter ${_ADMIN_FILTER.status===''?'on':''}" onclick="adminSetStatusFilter('')">ALL<span class="admin-filter-count">${all.length}</span></button>`];
+    STATUS_ORDER.forEach(s=>{
+      if(!counts[s]) return;
+      chips.push(`<button class="admin-filter ${_ADMIN_FILTER.status===s?'on':''}" onclick="adminSetStatusFilter('${s}')">${ccEscape(STATUS_LABELS[s])}<span class="admin-filter-count">${counts[s]}</span></button>`);
+    });
+    filtersEl.innerHTML=chips.join('');
+  }
+
+  // 검색·상태 필터 적용
+  const filtered=all.filter(o=>{
+    if(_ADMIN_FILTER.status && (o.status||'received')!==_ADMIN_FILTER.status) return false;
+    if(_ADMIN_FILTER.q){
+      const hay=[o.woNum,o.customer?.name,o.customer?.phone,o.customer?.email,
+                 o.spec?.material,o.spec?.colourKo,o.spec?.colour,o.spec?.size].join(' ').toLowerCase();
+      if(!hay.includes(_ADMIN_FILTER.q)) return false;
+    }
+    return true;
+  });
+
+  if(cntEl) cntEl.textContent=filtered.length+'/'+all.length+' 건';
+
+  if(!filtered.length){
+    listEl.innerHTML=`<div class="admin-empty">${all.length?'검색 결과 없음':'접수된 주문이 없습니다'}</div>`;
+    return;
+  }
+  listEl.innerHTML=filtered.map(o=>{
+    const dt=o.createdAt?new Date(o.createdAt).toLocaleString('ko-KR'):'—';
+    const isCustom=!!o.spec?.customDesign;
+    const cust=o.customer||{};
+    const sp=o.spec||{};
+    const st=o.status||'received';
+    const origIdx=all.indexOf(o);
+    return `<div class="admin-order" onclick="showAdminDetail(${origIdx})">
+      <div class="admin-order-head">
+        <div>
+          <div class="admin-order-num">${ccEscape(o.woNum||'—')}</div>
+          <div class="admin-order-date">${dt}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="admin-status ${st}"><span class="admin-status-dot"></span>${ccEscape(STATUS_LABELS[st]||st)}</span>
+          ${isCustom?`<span class="admin-order-tag CUSTOM">CUSTOM</span>`:``}
+        </div>
+      </div>
+      <div class="admin-order-grid">
+        <div class="admin-order-cell"><span>소재</span><b>${ccEscape(sp.material||'')}</b></div>
+        <div class="admin-order-cell"><span>컬러</span><b>${ccEscape(sp.colourKo||sp.colour||'')}</b></div>
+        <div class="admin-order-cell"><span>사이즈</span><b>${ccEscape(sp.size||'')}</b></div>
+        <div class="admin-order-cell"><span>HW</span><b>${ccEscape(sp.hardware||'')}</b></div>
+      </div>
+      <div class="admin-order-foot">
+        <div class="admin-order-cust">${ccEscape(cust.name||'—')} · ${ccEscape(cust.phone||'')}</div>
+        <div class="admin-order-total">${fmt(o.total||0)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function adminSetStatusFilter(s){
+  _ADMIN_FILTER.status=s;
+  adminRenderList();
+}
+
+function adminExportCSV(){
+  const all=window._ADMIN_ORDERS||[];
+  if(!all.length){toast('내보낼 주문이 없습니다');return;}
+  const header=['WO','Date','Status','Customer','Phone','Email','Address','Material','Colour','Size','Hardware','Monogram','Custom','Total','LeadTime','BlobURL'];
+  const esc=(v)=>{
+    const s=(v==null?'':String(v));
+    return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s;
+  };
+  const rows=all.map(o=>{
+    const c=o.customer||{}, sp=o.spec||{};
+    return [
+      o.woNum, o.createdAt, STATUS_LABELS[o.status||'received']||o.status,
+      c.name, c.phone, c.email, c.addr,
+      sp.material, sp.colourKo||sp.colour, sp.size, sp.hardware, sp.monogram||'',
+      sp.customDesign?'Y':'N',
+      o.total, o.leadTime, o.blobUrl||'',
+    ].map(esc).join(',');
+  });
+  const csv='\ufeff'+header.join(',')+'\n'+rows.join('\n'); // BOM for Excel Korean
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const ts=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  a.href=url; a.download=`vetti-orders-${ts}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast(`CSV 다운로드됨 (${all.length}건)`);
 }
 function showAdminDetail(idx){
   const orders=window._ADMIN_ORDERS||[];
@@ -3995,7 +4203,20 @@ function showAdminDetail(idx){
   const refs=sp.customRefs||{};
 
   const body=document.getElementById('admin-detail-body');
+  const curStatus=o.status||'received';
+  const statusBtns=STATUS_ORDER.map(s=>
+    `<button class="ad-status-btn ${curStatus===s?'on':''}" onclick="adminSetStatus(${idx},'${s}')">${ccEscape(STATUS_LABELS[s])}</button>`
+  ).join('');
   body.innerHTML=`
+    <div class="ad-sec">
+      <div class="ad-sec-title">Status</div>
+      <div class="ad-row"><span>현재 상태</span><b><span class="admin-status ${curStatus}"><span class="admin-status-dot"></span>${ccEscape(STATUS_LABELS[curStatus])}</span></b></div>
+      ${o.statusUpdatedAt?`<div class="ad-row"><span>최종 업데이트</span><b>${new Date(o.statusUpdatedAt).toLocaleString('ko-KR')}</b></div>`:''}
+      <div class="ad-status-grid">${statusBtns}</div>
+      <textarea class="ad-note-input" id="ad-note-${idx}" placeholder="내부 메모 (장인·운영팀만 조회)">${ccEscape(o.internalNote||'')}</textarea>
+      <button class="ad-save-btn" onclick="adminSaveNote(${idx})">내부 메모 저장</button>
+    </div>
+
     <div class="ad-sec">
       <div class="ad-sec-title">Order</div>
       <div class="ad-row"><span>WO</span><b>${ccEscape(o.woNum||'—')}</b></div>
@@ -4059,6 +4280,51 @@ function showAdminDetail(idx){
 }
 function closeAdminDetail(){
   document.getElementById('admin-detail').style.display='none';
+}
+
+async function _adminPatch(idx, payload){
+  const orders=window._ADMIN_ORDERS||[];
+  const o=orders[idx];
+  if(!o||!o.blobUrl){toast('blobUrl이 없습니다');return false;}
+  try{
+    const r=await fetch(API_BASE+'/api/admin/update',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Token':getAdminToken()},
+      body:JSON.stringify({blobUrl:o.blobUrl,...payload}),
+    });
+    if(r.status===401){clearAdminToken();toast('인증 만료. 다시 로그인해 주세요.');initAdminScreen();return false;}
+    if(!r.ok){const t=await r.text();toast('업데이트 실패: '+t.slice(0,100));return false;}
+    const d=await r.json();
+    if(payload.status){
+      o.status=d.status;
+      o.statusUpdatedAt=d.statusUpdatedAt;
+      o.statusHistory=o.statusHistory||[];
+      o.statusHistory.push({status:d.status,at:d.statusUpdatedAt});
+    }
+    if(typeof payload.internalNote==='string'){
+      o.internalNote=payload.internalNote;
+    }
+    return true;
+  }catch(e){
+    toast('네트워크 오류: '+(e.message||''));
+    return false;
+  }
+}
+
+async function adminSetStatus(idx, status){
+  const ok=await _adminPatch(idx,{status});
+  if(!ok) return;
+  toast('상태 업데이트됨: '+STATUS_LABELS[status]);
+  showAdminDetail(idx);    // 디테일 리렌더
+  adminRenderList();       // 리스트 리렌더
+}
+
+async function adminSaveNote(idx){
+  const ta=document.getElementById('ad-note-'+idx);
+  if(!ta) return;
+  const note=ta.value;
+  const ok=await _adminPatch(idx,{internalNote:note});
+  if(ok) toast('메모 저장됨');
 }
 
 function copyWO(){
