@@ -336,9 +336,35 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 .rvtab-360.on .rv360-icon{animation:rv360-spin 2s linear infinite;color:var(--black);}
 @keyframes rv360-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
-/* 360° 자동 회전 시 부드러운 크로스페이드 */
+/* 뷰 전환 시 부드러운 크로스페이드 + 약한 스케일 */
 .result-sketch canvas,.result-sketch img{transition:opacity .28s ease-out, transform .28s ease-out;}
-.result-sketch.fading canvas,.result-sketch.fading img{opacity:.35;transform:scale(.985);}
+.result-sketch.fading canvas,.result-sketch.fading img{opacity:.25;transform:scale(.985);}
+.result-sketch{touch-action:pan-y;} /* 수평 스와이프는 앱이 처리, 수직은 스크롤 */
+
+/* 각도 캡션 (하단 좌측 배지) */
+.rs-caption{
+  position:absolute;bottom:10px;left:10px;
+  background:rgba(255,255,255,.9);backdrop-filter:blur(4px);
+  padding:5px 10px;border-radius:3px;
+  font-size:10px;font-weight:700;letter-spacing:.08em;
+  color:var(--gray2);text-transform:uppercase;
+  opacity:0;transition:opacity .28s ease-out;pointer-events:none;
+  max-width:calc(100% - 20px);
+}
+.rs-caption.on{opacity:1;}
+
+/* 진행 도트 */
+.rv-dots{
+  display:flex;justify-content:center;align-items:center;gap:6px;
+  padding:12px 0 4px;
+}
+.rv-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--gray5);cursor:pointer;
+  transition:all .25s ease-out;
+}
+.rv-dot:hover{background:var(--gray3);}
+.rv-dot.on{background:var(--black);width:20px;border-radius:3px;}
 
 /* 결과 캔버스 */
 .result-sketch{
@@ -1945,7 +1971,8 @@ body.has-bottombar .cc-teaser{bottom:154px;}
       <button class="rvtab on" id="rvt1" onclick="setRV(1);exit3D()">FRONT</button>
       <button class="rvtab" id="rvt2" onclick="setRV(2);exit3D()">SIDE</button>
       <button class="rvtab" id="rvt3" onclick="setRV(3);exit3D()">BACK</button>
-      <button class="rvtab rvtab-360" id="rv-3d" onclick="toggle3D()" aria-label="3D 자유 회전">
+      <!-- 3D 자유 회전은 실사 glTF 모델 준비 전까지 시연 안정성을 위해 숨김 -->
+      <button class="rvtab rvtab-360" id="rv-3d" onclick="toggle3D()" aria-label="3D 자유 회전" style="display:none;">
         <span class="rv360-icon">◐</span><span class="rv360-txt">3D</span>
       </button>
     </div>
@@ -1965,6 +1992,13 @@ body.has-bottombar .cc-teaser{bottom:154px;}
         <div class="ro-elapsed" id="ro-elapsed">0s</div>
       </div>
       <button class="hd-render" id="hd-render-btn" style="display:none;" onclick="renderCurrentHD()">✨ HD 렌더 (이 뷰)</button>
+      <div class="rs-caption" id="rs-caption"></div>
+    </div>
+    <!-- 진행 도트 (1/3 · 2/3 · 3/3) + 좌우 스와이프 힌트 -->
+    <div class="rv-dots" id="rv-dots">
+      <span class="rv-dot on" onclick="setRV(1)" data-v="1"></span>
+      <span class="rv-dot" onclick="setRV(2)" data-v="2"></span>
+      <span class="rv-dot" onclick="setRV(3)" data-v="3"></span>
     </div>
 
     <!-- AI 분석 -->
@@ -2979,13 +3013,34 @@ async function generateGPTImage(n){
 }
 
 // ── 결과 뷰 ──────────────────────────────────────────
+const RV_CAPTIONS={
+  1:'정면 · 중앙 턴록 · 대칭 핸들',
+  2:'측면 · 20mm 거셋 · 봄베 곡면',
+  3:'후면 · 뒷판 새들스티치 · 핸들 결속부',
+};
+
 async function setRV(n,opts){
   opts=opts||{};
   S.rv=n;
+  // 크로스페이드: 잠깐 흐려졌다가 복귀
+  const sketch=document.querySelector('.result-sketch');
+  if(sketch && !opts.skipFade){
+    sketch.classList.add('fading');
+    setTimeout(()=>{const s=document.querySelector('.result-sketch');if(s) s.classList.remove('fading');},260);
+  }
+  // 탭 하이라이트
   ['rvt1','rvt2','rvt3'].forEach((id,i)=>{
     const el=document.getElementById(id);
     if(el) el.classList.toggle('on',i+1===n);
   });
+  // 도트 하이라이트
+  document.querySelectorAll('.rv-dot').forEach((d,i)=>d.classList.toggle('on',i+1===n));
+  // 캡션
+  const capEl=document.getElementById('rs-caption');
+  if(capEl){
+    capEl.textContent=RV_CAPTIONS[n]||'';
+    capEl.classList.toggle('on',!!RV_CAPTIONS[n]);
+  }
   const cv=document.getElementById('result-cv');
   const img=document.getElementById('result-img');
   const badge=document.getElementById('rs-badge');
@@ -3413,6 +3468,36 @@ async function goAI(){
 
   populateStandards();
   setRV(1,{render:true});
+  attachSwipeGesture();
+}
+
+// ── 결과 이미지 스와이프 제스처 ────────────────────────
+let _SWIPE_ATTACHED=false;
+function attachSwipeGesture(){
+  if(_SWIPE_ATTACHED) return;
+  const sk=document.querySelector('.result-sketch');
+  if(!sk) return;
+  _SWIPE_ATTACHED=true;
+  let startX=0, startY=0, active=false;
+  const onStart=(e)=>{
+    const t=e.touches?e.touches[0]:e;
+    startX=t.clientX; startY=t.clientY; active=true;
+  };
+  const onEnd=(e)=>{
+    if(!active) return; active=false;
+    const t=e.changedTouches?e.changedTouches[0]:e;
+    const dx=t.clientX-startX, dy=t.clientY-startY;
+    if(Math.abs(dx)<50 || Math.abs(dx)<Math.abs(dy)) return; // 가로 우세 스와이프만
+    const cur=S.rv||1;
+    if(dx<0 && cur<3) setRV(cur+1);
+    else if(dx>0 && cur>1) setRV(cur-1);
+  };
+  sk.addEventListener('touchstart',onStart,{passive:true});
+  sk.addEventListener('touchend',onEnd,{passive:true});
+  // 데스크톱 마우스 드래그 지원
+  sk.addEventListener('mousedown',onStart);
+  sk.addEventListener('mouseup',onEnd);
+  sk.addEventListener('mouseleave',()=>{active=false;});
 }
 
 // ── Manufacturing Standards 패널 렌더 ────────────────
