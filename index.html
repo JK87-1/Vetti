@@ -298,20 +298,50 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 }
 .ba-cta:active{opacity:.8;}
 
-/* ══════════ AI LOADING ══════════ */
-.ai-loading{padding:70px 28px;text-align:center;}
+/* ══════════ AI LOADING (skeleton) ══════════ */
+.ai-loading{padding:0 0 20px;}
 .spinner{
   width:44px;height:44px;border-radius:50%;
   border:2px solid var(--gray5);border-top-color:var(--black);
   animation:spin 1s linear infinite;margin:0 auto 20px;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
+
+/* Skeleton shimmer */
+.skel{
+  background:linear-gradient(90deg,#ECECEC 0%,#F5F5F3 50%,#ECECEC 100%);
+  background-size:200% 100%;
+  animation:skel-shimmer 1.4s linear infinite;
+  border-radius:4px;
+}
+@keyframes skel-shimmer{
+  0%{background-position:200% 0;}
+  100%{background-position:-200% 0;}
+}
+.skel-sketch{
+  width:100%;aspect-ratio:1/1;min-height:320px;margin-bottom:18px;border-radius:0;
+  position:relative;overflow:hidden;
+}
+.skel-sketch::after{
+  content:'AI RENDERING';
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:10px;font-weight:700;letter-spacing:.3em;
+  color:var(--gray3);
+}
+.skel-rows{padding:0 22px;display:flex;flex-direction:column;gap:9px;margin-bottom:22px;}
+.skel-line{height:11px;}
+.ai-loading-steps{padding:0 22px;text-align:left;}
 .ai-step{
-  opacity:.2;transition:opacity .5s;
-  font-size:12px;color:var(--gray3);line-height:2.3;
-  letter-spacing:.05em;
+  opacity:.35;transition:opacity .4s;
+  font-size:11.5px;color:var(--gray3);line-height:2.1;
+  letter-spacing:.04em;display:flex;align-items:center;gap:10px;
+}
+.ai-step::before{
+  content:'';width:14px;height:14px;border-radius:50%;
+  border:1.5px solid var(--gray5);flex:none;transition:all .3s;
 }
 .ai-step.on{opacity:1;color:var(--black);}
+.ai-step.on::before{border-color:var(--black);background:var(--black);}
 
 /* ══════════ RESULT ══════════ */
 .result-wrap{padding-bottom:110px;}
@@ -788,6 +818,49 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 .cv-upload-preview .cv-status{
   font-size:10px;color:var(--gray3);margin-top:6px;
 }
+
+/* ══════════ IMAGE ZOOM VIEWER ══════════ */
+.zoom-viewer{
+  position:fixed;inset:0;z-index:2500;
+  background:rgba(10,10,10,.93);
+  display:flex;align-items:center;justify-content:center;
+  touch-action:none;
+  animation:zoom-fade .2s ease-out;
+}
+@keyframes zoom-fade{from{opacity:0}to{opacity:1}}
+.zoom-stage{
+  width:100vw;height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+#zoom-img{
+  max-width:94vw;max-height:88vh;
+  transform-origin:center center;
+  transition:transform .2s ease-out;
+  user-select:none;-webkit-user-select:none;
+  cursor:zoom-in;
+}
+#zoom-img.dragging{transition:none;cursor:grabbing;}
+#zoom-img.zoomed{cursor:grab;}
+.zoom-close{
+  position:fixed;top:16px;right:16px;z-index:2;
+  width:40px;height:40px;border-radius:50%;
+  background:rgba(255,255,255,.15);color:#fff;border:none;
+  font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);
+}
+.zoom-close:active{background:rgba(255,255,255,.3);}
+.zoom-hint{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  padding:8px 14px;background:rgba(255,255,255,.12);color:#fff;
+  font-size:10.5px;letter-spacing:.08em;border-radius:20px;
+  backdrop-filter:blur(6px);pointer-events:none;
+  transition:opacity .5s;
+}
+
+.share-btn{flex:none;}
+.share-btn svg{color:var(--black);}
 
 /* ══════════ ADMIN DASHBOARD ══════════ */
 .admin-wrap{padding:24px 20px 80px;}
@@ -1956,12 +2029,18 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 
   <!-- 로딩 -->
   <div class="ai-loading" id="ai-loading">
-    <div class="spinner"></div>
-    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px;">Rendering</div>
-    <div class="ai-step" id="ls1">Analysing material texture</div>
-    <div class="ai-step" id="ls2">Mapping colour palette</div>
-    <div class="ai-step" id="ls3">Generating render</div>
-    <div class="ai-step" id="ls4">Writing material report</div>
+    <div class="skel skel-sketch"></div>
+    <div class="skel-rows">
+      <div class="skel skel-line" style="width:72%"></div>
+      <div class="skel skel-line" style="width:92%"></div>
+      <div class="skel skel-line" style="width:58%"></div>
+    </div>
+    <div class="ai-loading-steps">
+      <div class="ai-step" id="ls1">소재 질감 분석</div>
+      <div class="ai-step" id="ls2">컬러 팔레트 매핑</div>
+      <div class="ai-step" id="ls3">AI 렌더 생성</div>
+      <div class="ai-step" id="ls4">소재 분석서 작성</div>
+    </div>
   </div>
 
   <!-- 결과 -->
@@ -2035,9 +2114,17 @@ body.has-bottombar .cc-teaser{bottom:154px;}
       <button class="full-btn full-btn-black" onclick="go('s-workorder')" style="margin-bottom:10px;">
         작업지시서 생성 →
       </button>
-      <button class="full-btn full-btn-border" onclick="go('s-step1')">
-        ← 옵션 다시 선택
-      </button>
+      <div style="display:flex;gap:8px;">
+        <button class="full-btn full-btn-border" onclick="go('s-step1')" style="flex:1;">
+          ← 옵션 다시 선택
+        </button>
+        <button class="full-btn full-btn-border share-btn" onclick="shareConfig()" aria-label="구성 공유" style="flex:none;width:56px;padding:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -2184,6 +2271,15 @@ body.has-bottombar .cc-teaser{bottom:154px;}
       <div id="admin-list"></div>
     </div>
   </div>
+</div>
+
+<!-- 이미지 줌 뷰어 -->
+<div class="zoom-viewer" id="zoom-viewer" style="display:none;" onclick="closeZoom(event)">
+  <button class="zoom-close" onclick="closeZoom(event)" aria-label="닫기">✕</button>
+  <div class="zoom-stage" id="zoom-stage">
+    <img id="zoom-img" alt="확대 뷰" draggable="false"/>
+  </div>
+  <div class="zoom-hint" id="zoom-hint">더블탭 또는 핀치로 확대 · 드래그로 이동</div>
 </div>
 
 <!-- 주문 상세 오버레이 -->
@@ -3471,33 +3567,151 @@ async function goAI(){
   attachSwipeGesture();
 }
 
-// ── 결과 이미지 스와이프 제스처 ────────────────────────
+// ── 결과 이미지 스와이프 제스처 + 탭해서 확대 ──────────
 let _SWIPE_ATTACHED=false;
 function attachSwipeGesture(){
   if(_SWIPE_ATTACHED) return;
   const sk=document.querySelector('.result-sketch');
   if(!sk) return;
   _SWIPE_ATTACHED=true;
-  let startX=0, startY=0, active=false;
+  let startX=0, startY=0, startT=0, active=false, moved=false;
   const onStart=(e)=>{
     const t=e.touches?e.touches[0]:e;
-    startX=t.clientX; startY=t.clientY; active=true;
+    startX=t.clientX; startY=t.clientY; startT=Date.now(); active=true; moved=false;
+  };
+  const onMove=(e)=>{
+    if(!active) return;
+    const t=e.touches?e.touches[0]:e;
+    if(Math.abs(t.clientX-startX)>8 || Math.abs(t.clientY-startY)>8) moved=true;
   };
   const onEnd=(e)=>{
     if(!active) return; active=false;
     const t=e.changedTouches?e.changedTouches[0]:e;
     const dx=t.clientX-startX, dy=t.clientY-startY;
-    if(Math.abs(dx)<50 || Math.abs(dx)<Math.abs(dy)) return; // 가로 우세 스와이프만
-    const cur=S.rv||1;
-    if(dx<0 && cur<3) setRV(cur+1);
-    else if(dx>0 && cur>1) setRV(cur-1);
+    const dt=Date.now()-startT;
+    // 스와이프: 가로 우세
+    if(Math.abs(dx)>=50 && Math.abs(dx)>Math.abs(dy)){
+      const cur=S.rv||1;
+      if(dx<0 && cur<3) setRV(cur+1);
+      else if(dx>0 && cur>1) setRV(cur-1);
+      return;
+    }
+    // 탭 (이동 없고 짧음): 줌 뷰어 오픈
+    if(!moved && dt<350){
+      openZoomForCurrentView();
+    }
   };
   sk.addEventListener('touchstart',onStart,{passive:true});
+  sk.addEventListener('touchmove',onMove,{passive:true});
   sk.addEventListener('touchend',onEnd,{passive:true});
-  // 데스크톱 마우스 드래그 지원
   sk.addEventListener('mousedown',onStart);
+  sk.addEventListener('mousemove',onMove);
   sk.addEventListener('mouseup',onEnd);
   sk.addEventListener('mouseleave',()=>{active=false;});
+}
+
+// ── 이미지 줌 뷰어 ─────────────────────────────────
+function openZoomForCurrentView(){
+  const img=document.getElementById('result-img');
+  const cv=document.getElementById('result-cv');
+  let src=null;
+  if(img && img.src && img.style.display!=='none') src=img.src;
+  else if(cv){
+    try{ src=cv.toDataURL('image/png'); }catch(e){ return; }
+  }
+  if(!src) return;
+  const zi=document.getElementById('zoom-img');
+  zi.src=src;
+  zi.style.transform='translate(0,0) scale(1)';
+  _zoomState={scale:1,tx:0,ty:0};
+  document.getElementById('zoom-viewer').style.display='flex';
+  document.body.style.overflow='hidden';
+  const hint=document.getElementById('zoom-hint');
+  if(hint){hint.style.opacity='1';setTimeout(()=>{if(hint) hint.style.opacity='0';},2500);}
+  attachZoomHandlers();
+}
+function closeZoom(e){
+  if(e && e.target && e.target.id==='zoom-img') return; // 이미지 탭은 닫기 X
+  document.getElementById('zoom-viewer').style.display='none';
+  document.body.style.overflow='';
+}
+
+let _zoomState={scale:1,tx:0,ty:0};
+let _zoomAttached=false;
+function attachZoomHandlers(){
+  if(_zoomAttached) return; _zoomAttached=true;
+  const img=document.getElementById('zoom-img');
+  const apply=()=>{
+    const {scale,tx,ty}=_zoomState;
+    img.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
+    img.classList.toggle('zoomed',scale>1.05);
+  };
+  // 더블탭 토글
+  let lastTap=0;
+  img.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    const now=Date.now();
+    if(now-lastTap<320){
+      _zoomState.scale=_zoomState.scale>1.05?1:2.4;
+      _zoomState.tx=0;_zoomState.ty=0;
+      apply();
+    }
+    lastTap=now;
+  });
+  // 휠 줌 (데스크톱)
+  img.addEventListener('wheel',(e)=>{
+    e.preventDefault();
+    const delta=-e.deltaY*0.0015;
+    _zoomState.scale=Math.min(4,Math.max(1,_zoomState.scale+delta));
+    if(_zoomState.scale<=1){_zoomState.tx=0;_zoomState.ty=0;}
+    apply();
+  },{passive:false});
+  // 드래그 팬 (줌 상태에서만)
+  let dragX=0,dragY=0,dragging=false;
+  const downHandler=(e)=>{
+    if(_zoomState.scale<=1.05) return;
+    const t=e.touches?e.touches[0]:e;
+    dragX=t.clientX-_zoomState.tx; dragY=t.clientY-_zoomState.ty;
+    dragging=true;img.classList.add('dragging');
+  };
+  const moveHandler=(e)=>{
+    if(!dragging) return;
+    const t=e.touches?e.touches[0]:e;
+    _zoomState.tx=t.clientX-dragX;_zoomState.ty=t.clientY-dragY;
+    apply();
+  };
+  const upHandler=()=>{dragging=false;img.classList.remove('dragging');};
+  img.addEventListener('touchstart',downHandler,{passive:true});
+  img.addEventListener('touchmove',moveHandler,{passive:true});
+  img.addEventListener('touchend',upHandler);
+  img.addEventListener('mousedown',downHandler);
+  window.addEventListener('mousemove',moveHandler);
+  window.addEventListener('mouseup',upHandler);
+
+  // 핀치 줌 (투 포인터)
+  let pinchStart=null;
+  const stage=document.getElementById('zoom-stage');
+  stage.addEventListener('touchstart',(e)=>{
+    if(e.touches.length===2){
+      const [a,b]=e.touches;
+      pinchStart={
+        dist:Math.hypot(b.clientX-a.clientX,b.clientY-a.clientY),
+        scale:_zoomState.scale,
+      };
+    }
+  },{passive:true});
+  stage.addEventListener('touchmove',(e)=>{
+    if(e.touches.length===2 && pinchStart){
+      const [a,b]=e.touches;
+      const d=Math.hypot(b.clientX-a.clientX,b.clientY-a.clientY);
+      _zoomState.scale=Math.min(4,Math.max(1,pinchStart.scale*(d/pinchStart.dist)));
+      if(_zoomState.scale<=1){_zoomState.tx=0;_zoomState.ty=0;}
+      apply();
+    }
+  },{passive:true});
+  stage.addEventListener('touchend',(e)=>{
+    if(e.touches.length<2) pinchStart=null;
+  },{passive:true});
 }
 
 // ── Manufacturing Standards 패널 렌더 ────────────────
@@ -4400,6 +4614,58 @@ async function adminSaveNote(idx){
   if(ok) toast('메모 저장됨');
 }
 
+// ── 구성 공유 (Web Share API + URL params) ───────────
+function buildShareUrl(){
+  const p=new URLSearchParams();
+  p.set('mat',S.mat);p.set('col',S.col);p.set('hw',S.hw);p.set('sz',S.sz);
+  if(S.mono) p.set('mono',S.mono);
+  return location.origin+location.pathname+'?'+p.toString()+'#preview';
+}
+async function shareConfig(){
+  const url=buildShareUrl();
+  const mat=gm(),col=gc(),sz=gs();
+  const title='VETTI · '+mat.nm+' '+col.ko;
+  const text=`${mat.nm} ${col.ko} RENÉE ${sz.nm} (${fmt(gtot())}) — AI로 구성한 나만의 VETTI 가방`;
+  try{
+    if(navigator.share){
+      await navigator.share({title,text,url});
+      return;
+    }
+    if(navigator.clipboard){
+      await navigator.clipboard.writeText(url);
+      toast('공유 링크가 복사되었습니다 ✓');
+      return;
+    }
+    // 최종 폴백
+    prompt('아래 링크를 복사해서 공유해 주세요',url);
+  }catch(e){
+    // 사용자가 공유 다이얼로그를 닫은 경우 조용히 무시
+    if(e && e.name!=='AbortError'){
+      console.warn('[share]',e.message);
+    }
+  }
+}
+
+// URL에 ?mat=…&col=… 등이 있으면 S에 적용하고 step1로 진입
+function applyUrlConfig(){
+  const p=new URLSearchParams(location.search);
+  // 결제 리턴은 handlePaymentReturn이 처리하므로 스킵
+  if(p.get('pay')) return false;
+  let applied=false;
+  const mat=p.get('mat'),col=p.get('col'),hw=p.get('hw'),sz=p.get('sz'),mono=p.get('mono');
+  if(mat && MATS.find(m=>m.id===mat)){S.mat=mat;applied=true;}
+  if(col && COLS.find(c=>c.id===col)){S.col=col;applied=true;}
+  if(hw && HWS.find(h=>h.id===hw)){S.hw=hw;applied=true;}
+  if(sz && SZS.find(s=>s.id===sz)){S.sz=sz;applied=true;}
+  if(mono && /^[A-Z]{1,3}$/i.test(mono)){S.mono=mono.toUpperCase().slice(0,3);applied=true;}
+  if(applied){
+    // URL 정리
+    try{history.replaceState(null,'',location.pathname);}catch(e){}
+    return true;
+  }
+  return false;
+}
+
 function copyWO(){
   const el=document.getElementById('sent-wo-num');
   const txt=el?el.textContent.trim():'';
@@ -4888,7 +5154,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // 결제 리턴 처리 (Toss successUrl/failUrl에서 돌아왔을 때)
   await handlePaymentReturn();
   // URL 해시로 어드민 진입 (#admin)
-  if(location.hash==='#admin'){go('s-admin');}
+  if(location.hash==='#admin'){go('s-admin');return;}
+  // 공유된 구성 링크로 진입 (?mat=…#preview)
+  if(applyUrlConfig()){
+    setTimeout(()=>go('s-step1'),120);
+  }
 });
 
 // ── Toss 결제 리턴 처리 ──────────────────────────────
