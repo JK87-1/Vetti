@@ -3,7 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>VETTI</title>
+<title>VETTI — 장인이 만드는 단 하나의 가방</title>
+<meta name="description" content="AI 큐레이터가 소재·컬러·사이즈를 추천하고, 40년 경력 장인이 직접 제작하는 맞춤 가죽 가방. 크로커다일·리자드·오스트리치.">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="format-detection" content="telephone=no">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="VETTI">
+<meta property="og:title" content="VETTI — 장인이 만드는 단 하나의 가방">
+<meta property="og:description" content="AI 큐레이터 추천부터 내 디자인 업로드까지. 크로커다일·리자드·오스트리치 맞춤 제작.">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:url" content="https://vetti.kr">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VETTI — 장인이 만드는 단 하나의 가방">
+<meta name="twitter:description" content="AI 큐레이터 추천부터 내 디자인 업로드까지. 크로커다일·리자드·오스트리치 맞춤 제작.">
+<link rel="canonical" href="https://vetti.kr">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='8' fill='%230A0A0A'/><text x='32' y='44' font-family='Helvetica,Arial,sans-serif' font-size='34' font-weight='800' text-anchor='middle' fill='%23FFFFFF' letter-spacing='1'>V</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='32' fill='%230A0A0A'/><text x='90' y='122' font-family='Helvetica,Arial,sans-serif' font-size='96' font-weight='800' text-anchor='middle' fill='%23FFFFFF' letter-spacing='2'>V</text></svg>">
 <style>
 /* ── 리셋 & 기반 ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -1647,6 +1662,18 @@ body.has-bottombar .cc-teaser{bottom:154px;}
     <input id="cust-email" type="email" placeholder="이메일 *" inputmode="email" style="display:block;width:100%;margin:8px 0;padding:12px 14px;border:1px solid var(--gray5);border-radius:2px;font-family:var(--font);font-size:13px;background:#fff;outline:none;">
     <input id="cust-addr" placeholder="배송지 주소 *" style="display:block;width:100%;margin:8px 0;padding:12px 14px;border:1px solid var(--gray5);border-radius:2px;font-family:var(--font);font-size:13px;background:#fff;outline:none;">
     <textarea id="cust-note" rows="3" placeholder="요청사항 (선택)" style="display:block;width:100%;margin:8px 0;padding:12px 14px;border:1px solid var(--gray5);border-radius:2px;font-family:var(--font);font-size:13px;background:#fff;outline:none;resize:vertical;min-height:70px;"></textarea>
+
+    <!-- 개인정보 수집·이용 동의 (KR PIPA 필수) -->
+    <label for="cust-consent" style="display:flex;align-items:flex-start;gap:10px;padding:14px 2px 4px;cursor:pointer;">
+      <input type="checkbox" id="cust-consent" style="flex:none;width:18px;height:18px;margin-top:1px;accent-color:var(--black);cursor:pointer;">
+      <span style="font-size:11.5px;color:var(--gray2);line-height:1.6;">
+        <b style="color:var(--black);font-weight:700;">[필수]</b> 주문 접수·제작·배송을 위해 이름·연락처·이메일·배송지를 수집하며,
+        담당 장인에게 전달됨에 동의합니다.
+        <span style="display:block;color:var(--gray3);font-size:10.5px;margin-top:3px;">
+          보관 기간: 제작 완료 후 1년 (전자상거래법에 따른 보관 의무)
+        </span>
+      </span>
+    </label>
   </div>
   <div class="bottom-bar">
     <div class="ba-price">
@@ -1668,6 +1695,22 @@ body.has-bottombar .cc-teaser{bottom:154px;}
     <div class="sent-icon">✓</div>
     <div class="sent-title">Order Placed</div>
     <div class="sent-desc">작업지시서가 담당 장인에게<br>전달되었습니다.</div>
+
+    <!-- 주문번호 강조 카드 -->
+    <div id="sent-wo-card" style="border:1px solid var(--gray5);border-radius:6px;padding:18px 20px;margin:0 0 22px;background:#FAFAF8;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div style="text-align:left;">
+        <div style="font-size:9px;font-weight:700;color:var(--gray3);letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px;">Order Reference</div>
+        <div id="sent-wo-num" style="font-size:20px;font-weight:800;color:var(--black);letter-spacing:.04em;font-variant-numeric:tabular-nums;">WO-0000</div>
+      </div>
+      <button id="sent-copy-btn" type="button" onclick="copyWO()"
+        style="flex:none;padding:10px 14px;border:1px solid var(--black);border-radius:4px;background:#fff;color:var(--black);font-family:var(--font);font-size:11px;font-weight:700;letter-spacing:.08em;cursor:pointer;">
+        COPY
+      </button>
+    </div>
+    <div style="font-size:11px;color:var(--gray3);margin-bottom:24px;line-height:1.6;">
+      주문번호는 장인 확인 및 문의 시 사용되니 저장해 주세요.
+    </div>
+
     <div class="sent-detail" id="sent-detail"></div>
     <button class="full-btn full-btn-black" onclick="go('s-home')">홈으로 돌아가기</button>
   </div>
@@ -3082,6 +3125,12 @@ async function sendWO(){
     document.getElementById('cust-phone').focus();
     return;
   }
+  const consentEl=document.getElementById('cust-consent');
+  if(!consentEl||!consentEl.checked){
+    toast('개인정보 수집·이용에 동의해 주세요');
+    consentEl&&consentEl.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
 
   const mat=gm(),col=gc(),sz=gs(),hw=gh();
   const woNum=document.getElementById('wo-badge').textContent;
@@ -3097,6 +3146,7 @@ async function sendWO(){
 
   const order={
     woNum,createdAt:now.toISOString(),
+    consent:{pipa:true,consentedAt:now.toISOString()},
     customer:{name,phone,email,addr,note},
     spec:{model:isCustom?'CUSTOM':'RENÉE',customDesign:isCustom,
           material:mat.nm,materialEn:mat.en,origin:mat.origin,tannage:mat.tan,
@@ -3171,8 +3221,10 @@ async function sendWO(){
 
   toast(serverSaved?'주문이 접수되었습니다 ✓':'메일 앱으로 전송됩니다 ✓');
 
+  const senWoEl=document.getElementById('sent-wo-num');
+  if(senWoEl) senWoEl.textContent=woNum;
+
   document.getElementById('sent-detail').innerHTML=[
-    {k:'Order No.',v:woNum},
     {k:'Product',v:(isCustom?'CUSTOM · ':'RENÉE ')+sz.nm},
     {k:'Material',v:mat.nm},{k:'Colour',v:col.ko},
     {k:'Customer',v:name},{k:'Total',v:fmt(total)},
@@ -3181,6 +3233,28 @@ async function sendWO(){
 
   resetOrderState();
   setTimeout(()=>go('s-sent'),600);
+}
+
+function copyWO(){
+  const el=document.getElementById('sent-wo-num');
+  const txt=el?el.textContent.trim():'';
+  if(!txt) return;
+  const done=()=>{
+    const btn=document.getElementById('sent-copy-btn');
+    if(!btn) return;
+    const prev=btn.textContent;
+    btn.textContent='COPIED ✓';btn.disabled=true;
+    setTimeout(()=>{btn.textContent=prev;btn.disabled=false;},1500);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done,()=>toast('복사에 실패했습니다'));
+  }else{
+    // Fallback
+    const ta=document.createElement('textarea');ta.value=txt;
+    ta.style.cssText='position:fixed;left:-9999px;';document.body.appendChild(ta);
+    ta.select();try{document.execCommand('copy');done();}catch(e){toast('복사에 실패했습니다');}
+    document.body.removeChild(ta);
+  }
 }
 
 function resetOrderState(){
@@ -3195,6 +3269,8 @@ function resetOrderState(){
   ['cust-name','cust-phone','cust-email','cust-addr','cust-note','mono-inp'].forEach(id=>{
     const el=document.getElementById(id);if(el) el.value='';
   });
+  const consentEl=document.getElementById('cust-consent');
+  if(consentEl) consentEl.checked=false;
 }
 
 function toast(msg){
