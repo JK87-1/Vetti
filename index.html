@@ -324,6 +324,18 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
   transition:all .15s;
 }
 .rvtab.on{color:var(--black);border-bottom-color:var(--black);}
+.rvtab-360{
+  flex:0 0 auto;padding:12px 14px;display:flex;align-items:center;gap:4px;
+  color:var(--gray3);letter-spacing:.08em;
+}
+.rvtab-360 .rv360-icon{display:inline-block;font-size:12px;line-height:1;transition:transform .3s;}
+.rvtab-360.on{color:var(--black);border-bottom-color:var(--black);}
+.rvtab-360.on .rv360-icon{animation:rv360-spin 2s linear infinite;color:var(--black);}
+@keyframes rv360-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* 360° 자동 회전 시 부드러운 크로스페이드 */
+.result-sketch canvas,.result-sketch img{transition:opacity .28s ease-out, transform .28s ease-out;}
+.result-sketch.fading canvas,.result-sketch.fading img{opacity:.35;transform:scale(.985);}
 
 /* 결과 캔버스 */
 .result-sketch{
@@ -747,6 +759,73 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 .cv-upload-preview .cv-status{
   font-size:10px;color:var(--gray3);margin-top:6px;
 }
+
+/* ══════════ STANDARDS PANEL (result screen) ══════════ */
+.std-block{
+  margin:8px 22px 0;padding:20px 20px 18px;
+  background:#FAFAF8;border:1px solid var(--gray5);border-radius:8px;
+}
+.std-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px;}
+.std-eyebrow{
+  font-size:9px;font-weight:700;color:var(--gray3);
+  letter-spacing:.22em;text-transform:uppercase;margin-bottom:4px;
+}
+.std-title{font-size:15px;font-weight:800;color:var(--black);letter-spacing:-.01em;}
+.std-ver{
+  flex:none;font-size:9.5px;font-weight:700;color:var(--gray3);
+  letter-spacing:.08em;padding:4px 8px;border:1px solid var(--gray5);
+  border-radius:3px;background:#fff;font-variant-numeric:tabular-nums;
+}
+.std-sub{font-size:11px;color:var(--gray3);line-height:1.6;margin-bottom:14px;}
+.std-tabs{
+  display:flex;gap:0;border-bottom:1px solid var(--gray5);margin-bottom:4px;
+}
+.std-tab{
+  flex:1;padding:10px 0;background:none;border:none;cursor:pointer;
+  font-family:var(--font);font-size:10px;font-weight:700;color:var(--gray3);
+  letter-spacing:.14em;text-transform:uppercase;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;
+}
+.std-tab.on{color:var(--black);border-bottom-color:var(--black);}
+.std-panel{display:none;padding:12px 2px 0;}
+.std-panel.on{display:block;}
+.std-row{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:14px;
+  padding:10px 0;border-bottom:1px solid rgba(10,10,10,.06);
+}
+.std-row:last-child{border-bottom:none;}
+.std-k{
+  flex:none;width:100px;font-size:10.5px;font-weight:700;color:var(--gray3);
+  letter-spacing:.08em;text-transform:uppercase;padding-top:1px;
+}
+.std-v{
+  flex:1;font-size:12px;color:var(--black);font-weight:600;line-height:1.5;
+  font-variant-numeric:tabular-nums;text-align:right;
+}
+.std-v-sub{display:block;color:var(--gray3);font-weight:500;font-size:10.5px;margin-top:2px;}
+.std-proc-item{
+  padding:11px 0;border-bottom:1px solid rgba(10,10,10,.06);
+}
+.std-proc-item:last-child{border-bottom:none;}
+.std-proc-name{font-size:12px;font-weight:700;color:var(--black);margin-bottom:3px;letter-spacing:-.005em;}
+.std-proc-detail{font-size:11px;color:var(--gray3);line-height:1.55;}
+.std-proc-meta{font-size:9.5px;font-weight:700;color:var(--gray4);letter-spacing:.08em;text-transform:uppercase;margin-top:4px;}
+.std-qc-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 0;border-bottom:1px solid rgba(10,10,10,.06);
+}
+.std-qc-item:last-child{border-bottom:none;}
+.std-qc-left{flex:1;}
+.std-qc-code{font-size:9.5px;font-weight:700;color:var(--gray4);letter-spacing:.1em;margin-bottom:2px;}
+.std-qc-title{font-size:12px;font-weight:700;color:var(--black);margin-bottom:3px;}
+.std-qc-body{font-size:10.5px;color:var(--gray3);line-height:1.5;}
+.std-qc-lv{
+  flex:none;padding:4px 8px;border-radius:3px;
+  font-size:9px;font-weight:800;letter-spacing:.12em;
+}
+.std-qc-lv.CRITICAL{background:#FFF0F0;color:#8B0000;}
+.std-qc-lv.HIGH{background:#FFF5F7;color:#7A1D35;}
+.std-qc-lv.STANDARD{background:#F0F0F0;color:#555;}
 
 /* ══════════ COMPANY FOOTER ══════════ */
 .vetti-footer{
@@ -1700,11 +1779,14 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 
   <!-- 결과 -->
   <div id="ai-result" style="display:none;" class="result-wrap">
-    <!-- 뷰 탭 -->
+    <!-- 뷰 탭 + 360° 자동 회전 토글 -->
     <div class="rvtabs">
-      <button class="rvtab on" id="rvt1" onclick="setRV(1)">FRONT</button>
-      <button class="rvtab" id="rvt2" onclick="setRV(2)">SIDE</button>
-      <button class="rvtab" id="rvt3" onclick="setRV(3)">BACK</button>
+      <button class="rvtab on" id="rvt1" onclick="setRV(1);stopAutoRotate()">FRONT</button>
+      <button class="rvtab" id="rvt2" onclick="setRV(2);stopAutoRotate()">SIDE</button>
+      <button class="rvtab" id="rvt3" onclick="setRV(3);stopAutoRotate()">BACK</button>
+      <button class="rvtab rvtab-360" id="rv-auto" onclick="toggleAutoRotate()" aria-label="360도 자동 회전">
+        <span class="rv360-icon">◐</span><span class="rv360-txt">360°</span>
+      </button>
     </div>
 
     <!-- 렌더링 캔버스 -->
@@ -1729,6 +1811,26 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 
       <!-- 스펙 미니 그리드 -->
       <div class="spec-mini" id="spec-mini"></div>
+    </div>
+
+    <!-- 제조 데이터 표준화 패널 (크래프트 스냅샷 가시화) -->
+    <div class="std-block">
+      <div class="std-head">
+        <div>
+          <div class="std-eyebrow">Manufacturing Standards</div>
+          <div class="std-title">이 가방의 제작 표준</div>
+        </div>
+        <div class="std-ver" id="std-ver">v—</div>
+      </div>
+      <div class="std-sub">선택하신 구성에 따라 장인이 따를 소재·공정·품질 기준입니다. 주문 시점의 전체 파라미터가 서버에 박제되어 제작 후에도 추적 가능합니다.</div>
+      <div class="std-tabs">
+        <button class="std-tab on" data-tab="mat" onclick="stdTab('mat')">Material</button>
+        <button class="std-tab" data-tab="proc" onclick="stdTab('proc')">Process</button>
+        <button class="std-tab" data-tab="qc" onclick="stdTab('qc')">Quality</button>
+      </div>
+      <div class="std-panel on" id="std-p-mat"></div>
+      <div class="std-panel" id="std-p-proc"></div>
+      <div class="std-panel" id="std-p-qc"></div>
     </div>
 
     <!-- 버튼 -->
@@ -2141,6 +2243,7 @@ function drawOrig(canvas, cache){
 
 // ── 화면 전환 ─────────────────────────────────────────
 function go(id){
+  if(id!=='s-result') stopAutoRotate();
   document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
   document.getElementById(id).classList.add('on');
   window.scrollTo(0,0);
@@ -2754,6 +2857,36 @@ async function setRV(n,opts){
 }
 function renderCurrentHD(){setRV(S.rv||1,{render:true});}
 
+// ── 360° 자동 회전 뷰 (3D-like 멀티 앵글 프리뷰) ────────
+let RV_AUTO_TIMER=null;
+const RV_AUTO_SEQ=[1,2,3,2]; // 정면→측면→후면→측면→loop
+function _rvAutoStep(idxRef){
+  const sketch=document.querySelector('.result-sketch');
+  if(sketch) sketch.classList.add('fading');
+  setTimeout(()=>{
+    idxRef.i=(idxRef.i+1)%RV_AUTO_SEQ.length;
+    setRV(RV_AUTO_SEQ[idxRef.i]);
+    if(sketch) sketch.classList.remove('fading');
+  },220);
+}
+function toggleAutoRotate(){
+  if(RV_AUTO_TIMER){ stopAutoRotate(); return; }
+  const btn=document.getElementById('rv-auto');
+  if(btn) btn.classList.add('on');
+  const idxRef={i:Math.max(0,RV_AUTO_SEQ.indexOf(S.rv||1))};
+  _rvAutoStep(idxRef);
+  RV_AUTO_TIMER=setInterval(()=>_rvAutoStep(idxRef),2400);
+}
+function stopAutoRotate(){
+  if(!RV_AUTO_TIMER) return;
+  clearInterval(RV_AUTO_TIMER);
+  RV_AUTO_TIMER=null;
+  const btn=document.getElementById('rv-auto');
+  const sketch=document.querySelector('.result-sketch');
+  if(btn) btn.classList.remove('on');
+  if(sketch) sketch.classList.remove('fading');
+}
+
 // ── AI 렌더링 흐름 ───────────────────────────────────
 async function goAI(){
   // Generate side/back schematics from uploaded custom images before going to result
@@ -2838,7 +2971,68 @@ async function goAI(){
     {k:'Stitching',v:'Selle · 0.5mm'},{k:'Monogram',v:S.mono||'—'},
   ].map(r=>`<div class="sm-cell"><div class="sm-k">${r.k}</div><div class="sm-v">${r.v}</div></div>`).join('');
 
+  populateStandards();
   setRV(1,{render:true});
+}
+
+// ── Manufacturing Standards 패널 렌더 ────────────────
+function stdTab(key){
+  ['mat','proc','qc'].forEach(k=>{
+    const tab=document.querySelector('.std-tab[data-tab="'+k+'"]');
+    const panel=document.getElementById('std-p-'+k);
+    if(tab) tab.classList.toggle('on',k===key);
+    if(panel) panel.classList.toggle('on',k===key);
+  });
+}
+function populateStandards(){
+  const snap=buildCraftSnapshot();
+  const verEl=document.getElementById('std-ver');
+  if(verEl) verEl.textContent='v'+snap.version;
+
+  // Material tab
+  const m=snap.material, c=snap.colour, h=snap.hardware, s=snap.size;
+  const matRows=[
+    {k:'소재',   v:`${m.name} (${m.nameEn})`,    sub:m.origin},
+    {k:'등급',   v:m.grade},
+    {k:'두께',   v:m.thickness},
+    {k:'태닝',   v:m.tannage},
+    {k:'안감',   v:m.lining},
+    {k:'컬러',   v:`${c.name} · ${c.ko}`, sub:`RGB ${c.rgb.r}, ${c.rgb.g}, ${c.rgb.b}`},
+    {k:'하드웨어',v:h.name},
+    {k:'사이즈', v:`${s.name} · W${s.widthMm}×H${s.heightMm}×D${s.depthMm}mm`, sub:`핸들드롭 ${s.handleLengthMm}mm · 스트랩 ${s.strapLengthMm}mm`},
+  ];
+  const matEl=document.getElementById('std-p-mat');
+  if(matEl) matEl.innerHTML=matRows.map(r=>
+    `<div class="std-row"><span class="std-k">${r.k}</span><span class="std-v">${r.v}${r.sub?`<span class="std-v-sub">${r.sub}</span>`:''}</span></div>`
+  ).join('');
+
+  // Process tab — 가중치(w:true) 붙은 핵심 공정만 노출
+  const procEl=document.getElementById('std-p-proc');
+  if(procEl){
+    const keyProcs=snap.processes.filter(p=>p.w);
+    procEl.innerHTML=keyProcs.map((p,i)=>
+      `<div class="std-proc-item">
+        <div class="std-proc-name">${String(i+1).padStart(2,'0')} · ${p.n}</div>
+        <div class="std-proc-detail">${p.d}</div>
+        <div class="std-proc-meta">소요 ${p.t}</div>
+      </div>`
+    ).join('');
+  }
+
+  // QC tab
+  const qcEl=document.getElementById('std-p-qc');
+  if(qcEl){
+    qcEl.innerHTML=snap.qcCriteria.map(q=>
+      `<div class="std-qc-item">
+        <div class="std-qc-left">
+          <div class="std-qc-code">${q.c}</div>
+          <div class="std-qc-title">${q.t}</div>
+          <div class="std-qc-body">${q.b}</div>
+        </div>
+        <span class="std-qc-lv ${q.lv}">${q.lv}</span>
+      </div>`
+    ).join('');
+  }
 }
 
 // ── 작업지시서 ───────────────────────────────────────
