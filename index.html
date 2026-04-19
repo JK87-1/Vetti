@@ -1831,9 +1831,12 @@ function punchHandleHoles(canvas,tag){
   //         rejects handle-strap interiors and edge artifacts (which sit
   //         in the 1.3–2.0% range on all 9 reference images) while every
   //         real arch/gusset lands at 6.9% or higher.
-  //       • density (pixel-count / bbox-area) ≥ 0.35 (rejects sparse fragments
-  //         like stray scale-line artifacts that span a wide bbox but have
-  //         very few pixels)
+  //       • density (pixel-count / bbox-area) ≥ 0.70 — real arches are clean
+  //         negative space (density 0.79–0.83); side-view body panels have
+  //         scale patterns puncturing the fill (0.40–0.63). This threshold
+  //         also disables punching on side views entirely, which is correct:
+  //         side profiles have no enclosed holes — handles seen from the
+  //         side don't form a loop.
   //       • width & height ≥ 25px
   //       • not touching the image edge
   //   3. Punch top 3 candidates ranked by bbox area (desc).
@@ -1860,7 +1863,7 @@ function punchHandleHoles(canvas,tag){
     if(bb<silBB*0.05) continue;
     if(bb>silBB*0.30) continue;
     const density=r.size/bb;
-    if(density<0.35) continue;
+    if(density<0.70) continue;
     const rw=r.maxX-r.minX, rh=r.maxY-r.minY;
     if(rw<25||rh<25) continue;
     candidates.push(r);
