@@ -6,7 +6,7 @@ const ALLOWED_ORIGINS = [
   'https://jk87-1.github.io',
 ];
 
-const VALID_STATUSES = ['received', 'crafting', 'qc', 'shipping', 'delivered', 'cancelled'];
+const VALID_STATUSES = ['pending_payment', 'received', 'crafting', 'qc', 'shipping', 'delivered', 'cancelled'];
 
 function setCors(req, res) {
   const origin = req.headers.origin || '';

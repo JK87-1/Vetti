@@ -4,6 +4,7 @@
     "api/chat.js": { "maxDuration": 30 },
     "api/orders.js": { "maxDuration": 15 },
     "api/admin/list.js": { "maxDuration": 20 },
-    "api/admin/update.js": { "maxDuration": 15 }
+    "api/admin/update.js": { "maxDuration": 15 },
+    "api/payments/confirm.js": { "maxDuration": 20 }
   }
 }

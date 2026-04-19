@@ -21,6 +21,7 @@
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='32' fill='%230A0A0A'/><text x='90' y='122' font-family='Helvetica,Arial,sans-serif' font-size='96' font-weight='800' text-anchor='middle' fill='%23FFFFFF' letter-spacing='2'>V</text></svg>">
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" defer></script>
+<script src="https://js.tosspayments.com/v1/payment" defer></script>
 <style>
 /* ── 리셋 & 기반 ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -2055,10 +2056,10 @@ body.has-bottombar .cc-teaser{bottom:154px;}
     <label for="cust-consent" style="display:flex;align-items:flex-start;gap:10px;padding:14px 2px 4px;cursor:pointer;">
       <input type="checkbox" id="cust-consent" style="flex:none;width:18px;height:18px;margin-top:1px;accent-color:var(--black);cursor:pointer;">
       <span style="font-size:11.5px;color:var(--gray2);line-height:1.6;">
-        <b style="color:var(--black);font-weight:700;">[필수]</b> 주문 접수·제작·배송을 위해 이름·연락처·이메일·배송지를 수집하며,
-        담당 장인에게 전달됨에 동의합니다.
+        <b style="color:var(--black);font-weight:700;">[필수]</b> 주문 접수·제작·배송·결제 처리를 위해 이름·연락처·이메일·배송지를 수집하며,
+        담당 장인 및 결제 대행사(Toss Payments)에 전달됨에 동의합니다.
         <span style="display:block;color:var(--gray3);font-size:10.5px;margin-top:3px;">
-          보관 기간: 제작 완료 후 1년 (전자상거래법에 따른 보관 의무)
+          보관 기간: 제작 완료 후 1년 (전자상거래법)&nbsp;·&nbsp;결제 기록 5년 (전자금융거래법)
         </span>
       </span>
     </label>
@@ -2068,7 +2069,7 @@ body.has-bottombar .cc-teaser{bottom:154px;}
       <div class="ba-lbl">Total</div>
       <div class="ba-val" id="wo-price">-</div>
     </div>
-    <button class="ba-cta" onclick="sendWO()">장인에게 발송 →</button>
+    <button class="ba-cta" onclick="sendWO()">결제하고 주문하기 →</button>
   </div>
 </div>
 
@@ -2169,6 +2170,10 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 const VETTI_CONFIG = {
   orderEmail: 'orders@vetti.kr',
   aiRenderEndpoint: null,
+  // Toss Payments 공개 클라이언트 키 — 기본은 Toss 문서의 테스트 키
+  // (실결제 아님, 테스트 카드만 사용). 운영 전환 시 환경별로 교체:
+  //   window.VETTI_TOSS_CLIENT_KEY 가 정의돼있으면 그것을 우선 사용.
+  tossClientKey: (typeof window!=='undefined' && window.VETTI_TOSS_CLIENT_KEY) || 'test_ck_docs_Ovk5rk1EwkEbP0W43n07xlzm',
 };
 
 // ── 데이터 ────────────────────────────────────────────
@@ -3928,16 +3933,14 @@ async function sendWO(){
 
   const order={
     woNum,createdAt:now.toISOString(),
-    status:'received',
-    statusHistory:[{status:'received',at:now.toISOString()}],
+    status:'pending_payment',
+    statusHistory:[{status:'pending_payment',at:now.toISOString()}],
     consent:{pipa:true,consentedAt:now.toISOString()},
     customer:{name,phone,email,addr,note},
     spec:{model:isCustom?'CUSTOM':'RENÉE',customDesign:isCustom,
           material:mat.nm,materialEn:mat.en,origin:mat.origin,tannage:mat.tan,
           colour:col.nm,colourKo:col.ko,size:sz.nm,sizeDim:sz.dim,hardware:hw.nm,monogram:S.mono||'',
           customRefs:isCustom?customRefs:null},
-    // 크래프트 스냅샷 — 주문 시점의 공정/패턴/QC 파라미터 전체. 이후 공정이
-    // 바뀌어도 이 주문이 어떤 기준으로 만들어졌는지 재현 가능.
     craft: buildCraftSnapshot(),
     total,leadTime:'4 weeks'
   };
@@ -3947,88 +3950,73 @@ async function sendWO(){
     localStorage.setItem('vetti_orders',JSON.stringify(orders));
   }catch(e){}
 
-  const customLines=isCustom?[
-    '',
-    `■ 커스텀 디자인 (CUSTOM)`,
-    `• 디자인 유형: 고객 맞춤 제작`,
-    customRefs.front?`• FRONT 도식화: ${customRefs.front}`:'',
-    customRefs.side ?`• SIDE 도식화: ${customRefs.side}` :`• SIDE: VETTI 표준 구조 적용`,
-    customRefs.back ?`• BACK 도식화: ${customRefs.back}` :`• BACK: VETTI 표준 구조 적용`,
-  ]:[];
-
-  const body=[
-    `[VETTI 작업지시서] ${woNum}${isCustom?' (CUSTOM)':''}`,'',
-    `■ 주문 정보`,
-    `• 주문번호: ${woNum}`,
-    `• 주문일시: ${now.toLocaleString('ko-KR')}`,
-    `• 총액: ${fmt(total)}`,
-    `• 리드타임: 4주`,'',
-    `■ 고객 정보`,
-    `• 이름: ${name}`,
-    `• 연락처: ${phone}`,
-    `• 이메일: ${email}`,
-    `• 배송지: ${addr}`,
-    note?`• 요청사항: ${note}`:'','',
-    `■ 제품 사양`,
-    `• 모델: ${isCustom?'CUSTOM (고객 맞춤)':'RENÉE'}`,
-    `• 소재: ${mat.nm} (${mat.en}) · ${mat.origin} · ${mat.tan}`,
-    `• 컬러: ${col.nm} (${col.ko})`,
-    `• 사이즈: ${sz.nm} ${sz.dim}`,
-    `• 하드웨어: ${hw.nm}`,
-    S.mono?`• 모노그램: ${S.mono}`:'',
-    ...customLines,
-  ].filter(Boolean).join('\n');
-
-  if(navigator.clipboard){navigator.clipboard.writeText(body).catch(()=>{});}
-
-  // 서버 저장 시도 (3초 타임아웃, 실패해도 흐름 진행)
-  let serverSaved=false;
+  // 1) 서버에 pending_payment 상태로 주문 저장
+  toast('주문 생성 중…');
+  let blobUrl=null;
   try{
-    const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),3000);
     const r=await fetch(API_BASE+'/api/orders',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(order),signal:ctrl.signal,
+      body:JSON.stringify(order),
     });
-    clearTimeout(tid);
-    if(r.ok){
-      const d=await r.json();
-      serverSaved=!!d.ok;
-      if(d.url){try{
-        const orders=JSON.parse(localStorage.getItem('vetti_orders')||'[]');
-        const last=orders[orders.length-1];
-        if(last && last.woNum===woNum){last.serverUrl=d.url;localStorage.setItem('vetti_orders',JSON.stringify(orders));}
-      }catch(e){}}
+    if(!r.ok){
+      const t=await r.text();
+      toast('주문 저장 실패: '+t.slice(0,80));
+      return;
     }
-  }catch(e){console.warn('[VETTI] /api/orders failed:',e.message);}
+    const d=await r.json();
+    blobUrl=d.url||null;
+    try{
+      const orders=JSON.parse(localStorage.getItem('vetti_orders')||'[]');
+      const last=orders[orders.length-1];
+      if(last && last.woNum===woNum){last.serverUrl=blobUrl;localStorage.setItem('vetti_orders',JSON.stringify(orders));}
+    }catch(e){}
+  }catch(e){
+    toast('네트워크 오류: 주문을 저장할 수 없습니다');
+    return;
+  }
 
-  const subject=`[VETTI] 신규 작업지시서 ${woNum}${isCustom?' · CUSTOM':''} - ${name}`;
-  const mailto=`mailto:${VETTI_CONFIG.orderEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  window.location.href=mailto;
+  // 2) 결제 컨텍스트를 sessionStorage에 저장 (결제 후 리턴 시 사용)
+  try{
+    sessionStorage.setItem('vetti_pending_payment',JSON.stringify({
+      woNum, blobUrl, amount:total,
+      customer:{name,email,phone:phoneDigits},
+      spec:{model:isCustom?'CUSTOM':'RENÉE',material:mat.nm,colour:col.ko,size:sz.nm},
+      createdAt:now.toISOString(),
+    }));
+  }catch(e){}
 
-  toast(serverSaved?'주문이 접수되었습니다 ✓':'메일 앱으로 전송됩니다 ✓');
-
-  const senWoEl=document.getElementById('sent-wo-num');
-  if(senWoEl) senWoEl.textContent=woNum;
-
-  document.getElementById('sent-detail').innerHTML=[
-    {k:'Product',v:(isCustom?'CUSTOM · ':'RENÉE ')+sz.nm},
-    {k:'Material',v:mat.nm},{k:'Colour',v:col.ko},
-    {k:'Customer',v:name},{k:'Total',v:fmt(total)},
-    {k:'Lead Time',v:'4 weeks'},
-  ].map(r=>`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--gray5);font-size:12px;"><span style="color:var(--gray3);">${r.k}</span><span style="font-weight:700;">${r.v}</span></div>`).join('');
-
-  resetOrderState();
-  setTimeout(()=>go('s-sent'),600);
+  // 3) Toss 결제 위젯 호출
+  if(!window.TossPayments){
+    toast('결제 모듈 로딩 중입니다. 잠시 후 다시 시도해 주세요.');
+    return;
+  }
+  try{
+    const tossPayments=TossPayments(VETTI_CONFIG.tossClientKey);
+    const orderName=(isCustom?'VETTI CUSTOM · ':'VETTI RENÉE · ')+mat.nm+' '+col.ko+' '+sz.nm;
+    await tossPayments.requestPayment('카드',{
+      amount: total,
+      orderId: woNum,
+      orderName: orderName.slice(0,100),
+      customerName: name,
+      customerEmail: email,
+      customerMobilePhone: phoneDigits,
+      successUrl: location.origin + location.pathname + '?pay=success',
+      failUrl:    location.origin + location.pathname + '?pay=fail',
+    });
+    // requestPayment는 리다이렉트되므로 이 라인 이후는 실행되지 않음
+  }catch(e){
+    // 사용자가 결제창을 닫았거나 에러 발생
+    toast('결제를 시작할 수 없습니다: '+(e.message||''));
+  }
 }
 
 // ── 관리자 대시보드 ───────────────────────────────────
 const ADMIN_TOKEN_KEY='vetti_admin_token';
 const STATUS_LABELS={
-  received:'접수됨', crafting:'제작 중', qc:'품질 검수',
+  pending_payment:'결제 대기', received:'접수됨', crafting:'제작 중', qc:'품질 검수',
   shipping:'배송 준비', delivered:'배송 완료', cancelled:'취소',
 };
-const STATUS_ORDER=['received','crafting','qc','shipping','delivered','cancelled'];
+const STATUS_ORDER=['pending_payment','received','crafting','qc','shipping','delivered','cancelled'];
 let _ADMIN_FILTER={q:'',status:''};
 function getAdminToken(){try{return sessionStorage.getItem(ADMIN_TOKEN_KEY)||'';}catch(e){return '';}}
 function setAdminTokenVal(t){try{sessionStorage.setItem(ADMIN_TOKEN_KEY,t);}catch(e){}}
@@ -4812,9 +4800,101 @@ function obDismiss(){
 // ── 초기화 ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',async()=>{
   await Promise.all(['croc','lizard','ostrich'].flatMap(m=>[1,2,3].map(v=>loadImg(m,v))));
+  // 결제 리턴 처리 (Toss successUrl/failUrl에서 돌아왔을 때)
+  await handlePaymentReturn();
   // URL 해시로 어드민 진입 (#admin)
   if(location.hash==='#admin'){go('s-admin');}
 });
+
+// ── Toss 결제 리턴 처리 ──────────────────────────────
+async function handlePaymentReturn(){
+  const params=new URLSearchParams(location.search);
+  const payStatus=params.get('pay');
+  if(!payStatus) return;
+
+  const cleanUrl=()=>{try{history.replaceState(null,'',location.pathname);}catch(e){}};
+
+  if(payStatus==='fail'){
+    const msg=params.get('message')||'결제가 취소되었습니다';
+    const code=params.get('code')||'';
+    cleanUrl();
+    try{sessionStorage.removeItem('vetti_pending_payment');}catch(e){}
+    toast('결제 실패'+(code?' ('+code+')':'')+': '+msg);
+    return;
+  }
+
+  if(payStatus!=='success') return;
+  const paymentKey=params.get('paymentKey');
+  const orderId=params.get('orderId');
+  const amount=parseInt(params.get('amount')||'0',10);
+  cleanUrl();
+
+  if(!paymentKey||!orderId||!amount){
+    toast('결제 파라미터 누락');
+    return;
+  }
+
+  let ctx={};
+  try{ctx=JSON.parse(sessionStorage.getItem('vetti_pending_payment')||'{}');}catch(e){}
+
+  go('s-sent');
+  const card=document.getElementById('sent-wo-card');
+  const detailEl=document.getElementById('sent-detail');
+  if(detailEl) detailEl.innerHTML=`<div style="padding:20px;text-align:center;color:var(--gray3);font-size:12px;">결제 승인 확인 중…</div>`;
+  const senWoEl=document.getElementById('sent-wo-num');
+  if(senWoEl) senWoEl.textContent=orderId;
+
+  try{
+    const r=await fetch(API_BASE+'/api/payments/confirm',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({paymentKey,orderId,amount,blobUrl:ctx.blobUrl||null}),
+    });
+    if(!r.ok){
+      const t=await r.text();
+      toast('결제 확인 실패');
+      if(detailEl) detailEl.innerHTML=`<div style="padding:16px;background:#FFF0F0;border-radius:4px;color:#8B0000;font-size:11.5px;line-height:1.6;">
+        결제는 진행됐지만 승인 확인에 실패했습니다.<br>
+        고객센터 0502-1944-1233로 연락 주시면 즉시 처리해 드립니다.<br>
+        <span style="display:block;margin-top:8px;font-size:10px;color:#666;">Error: ${ccEscape(t.slice(0,120))}</span>
+      </div>`;
+      return;
+    }
+    const d=await r.json();
+    const payment=d.payment||{};
+
+    // localStorage 주문 레코드 상태 업데이트
+    try{
+      const orders=JSON.parse(localStorage.getItem('vetti_orders')||'[]');
+      const ord=orders.find(o=>o.woNum===orderId);
+      if(ord){
+        ord.status='received';
+        ord.statusHistory=(ord.statusHistory||[]).concat([{status:'received',at:new Date().toISOString(),trigger:'payment'}]);
+        ord.payment={paymentKey:payment.paymentKey,approvedAt:payment.approvedAt,totalAmount:payment.totalAmount,method:payment.method,receiptUrl:payment.receiptUrl};
+        localStorage.setItem('vetti_orders',JSON.stringify(orders));
+      }
+    }catch(e){}
+
+    try{sessionStorage.removeItem('vetti_pending_payment');}catch(e){}
+
+    const paidAt=payment.approvedAt?new Date(payment.approvedAt).toLocaleString('ko-KR'):new Date().toLocaleString('ko-KR');
+    const methodLbl=payment.method||'카드';
+    if(detailEl) detailEl.innerHTML=[
+      {k:'Product',v:(ctx.spec?.model==='CUSTOM'?'CUSTOM · ':'RENÉE ')+(ctx.spec?.size||'')},
+      {k:'Material',v:ctx.spec?.material||'—'},
+      {k:'Colour',v:ctx.spec?.colour||'—'},
+      {k:'Customer',v:ctx.customer?.name||'—'},
+      {k:'Paid',v:fmt(payment.totalAmount||amount||0)+' ('+methodLbl+')'},
+      {k:'Paid At',v:paidAt},
+      {k:'Lead Time',v:'4 weeks'},
+    ].map(r=>`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--gray5);font-size:12px;"><span style="color:var(--gray3);">${r.k}</span><span style="font-weight:700;">${r.v}</span></div>`).join('')
+    + (payment.receiptUrl?`<a href="${payment.receiptUrl}" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:16px;padding:10px;border:1px solid var(--gray5);border-radius:4px;font-size:11px;color:var(--black);text-decoration:none;letter-spacing:.08em;">영수증 보기 ↗</a>`:'');
+
+    resetOrderState();
+    toast('결제 완료 ✓');
+  }catch(e){
+    toast('네트워크 오류: '+(e.message||''));
+  }
+}
 window.addEventListener('hashchange',()=>{
   if(location.hash==='#admin' && !document.getElementById('s-admin').classList.contains('on')){
     go('s-admin');
