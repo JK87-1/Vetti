@@ -443,6 +443,26 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 .ro-sub{font-size:11px;color:var(--gray3);}
 .ro-elapsed{font-size:10px;color:var(--gray3);font-variant-numeric:tabular-nums;}
 
+/* AI 렌더 에러 오버레이 */
+.render-error{
+  position:absolute;inset:0;
+  background:#F5F3F0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;z-index:6;padding:24px;text-align:center;
+}
+.re-icon{color:#8B0000;margin-bottom:4px;}
+.re-title{font-size:13px;font-weight:800;color:var(--black);letter-spacing:-.005em;}
+.re-sub{font-size:11px;color:var(--gray3);line-height:1.5;margin-bottom:14px;max-width:260px;}
+.re-actions{display:flex;flex-direction:column;gap:8px;width:100%;max-width:240px;}
+.re-btn{
+  padding:10px 16px;border:1px solid var(--gray5);border-radius:3px;
+  background:#fff;font-family:var(--font);font-size:11px;font-weight:700;
+  letter-spacing:.08em;color:var(--gray2);cursor:pointer;
+  text-transform:uppercase;transition:all .15s;
+}
+.re-btn-primary{background:var(--black);color:#fff;border-color:var(--black);}
+.re-btn:active{transform:scale(.98);}
+
 /* AI 분석 */
 .ai-block{padding:28px 22px 0;}
 .ai-block-title{
@@ -817,6 +837,18 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 }
 .cv-upload-preview .cv-status{
   font-size:10px;color:var(--gray3);margin-top:6px;
+}
+
+/* ══════════ DEMO MODE INDICATOR ══════════ */
+html.demo-mode::before{
+  content:'DEMO';
+  position:fixed;top:0;left:50%;transform:translateX(-50%);
+  z-index:9998;
+  background:var(--gold);color:#fff;
+  padding:3px 16px;font-size:9px;font-weight:800;letter-spacing:.22em;
+  border-radius:0 0 4px 4px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+  pointer-events:none;
 }
 
 /* ══════════ IMAGE ZOOM VIEWER ══════════ */
@@ -2070,6 +2102,17 @@ body.has-bottombar .cc-teaser{bottom:154px;}
         <div class="ro-sub" id="ro-sub">GPT 이미지 렌더링 중입니다 (30~60초)</div>
         <div class="ro-elapsed" id="ro-elapsed">0s</div>
       </div>
+      <div class="render-error" id="render-error" style="display:none;">
+        <div class="re-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12" y2="16"/></svg>
+        </div>
+        <div class="re-title">AI 렌더를 생성하지 못했습니다</div>
+        <div class="re-sub" id="re-sub">네트워크 또는 서버 문제일 수 있습니다</div>
+        <div class="re-actions">
+          <button class="re-btn re-btn-primary" onclick="retryCurrentRender()">다시 시도</button>
+          <button class="re-btn" onclick="dismissRenderError()">도식화로 계속 보기</button>
+        </div>
+      </div>
       <button class="hd-render" id="hd-render-btn" style="display:none;" onclick="renderCurrentHD()">✨ HD 렌더 (이 뷰)</button>
       <div class="rs-caption" id="rs-caption"></div>
     </div>
@@ -2356,6 +2399,16 @@ const HWS = [
   {id:'rut',   nm:'Ruthenium',em:'🖤',delta:100000},
 ];
 const BASE=2400000;
+
+// ── 시연 모드 ────────────────────────────────────────
+// ?demo=1 이 붙은 URL로 접속 시 활성화.
+// - 컨시어지: /api/chat 호출 없이 스크립트 응답
+// - 주문/결제: /api/orders와 Toss 우회, 즉시 결제 완료 처리
+// 네트워크·API 실패에 무관하게 4대 플로우 시연 보장.
+const DEMO_MODE = (() => {
+  try { return new URLSearchParams(location.search).get('demo') === '1'; }
+  catch(e) { return false; }
+})();
 
 // ── 크래프트 스냅샷 메타 ─────────────────────────────
 // 공정 파라미터를 바꿀 때마다 반드시 bump. 주문마다 당시 버전이
@@ -3201,13 +3254,27 @@ async function setRV(n,opts){
     }catch(e){
       clearInterval(tick);
       if(ov) ov.style.display='none';
-      console.warn('GPT render failed, falling back:',e.message);
+      console.warn('GPT render failed:',e.message);
       const msg=e.message||'unknown';
-      badge.textContent='RENDER FAIL';
-      if(msg.includes('401')) toast('API 키 오류 — ⚙에서 재설정');
-      else if(msg.includes('403')) toast('조직 인증 필요 (platform.openai.com → Settings → Verify)');
-      else if(msg.includes('429')) toast('레이트 리밋 / 크레딧 확인');
-      else toast('렌더 실패: '+msg.slice(0,80));
+      // 시연 모드는 즉시 fallback, 에러 UI 안 띄움
+      if(DEMO_MODE){
+        badge.textContent=mat.nm+' '+col.ko;
+      } else {
+        // 명시적 에러 UI + 재시도 버튼
+        const err=document.getElementById('render-error');
+        const sub=document.getElementById('re-sub');
+        if(sub){
+          if(msg.includes('401')) sub.textContent='API 키 인증 오류. ⚙ 버튼에서 재설정 가능합니다.';
+          else if(msg.includes('403')) sub.textContent='조직 인증이 필요합니다. (platform.openai.com → Settings → Verify)';
+          else if(msg.includes('429')) sub.textContent='레이트 리밋 또는 크레딧 확인이 필요합니다.';
+          else if(msg.includes('abort')||msg.includes('timeout')) sub.textContent='렌더링 시간이 초과됐습니다. 다시 시도해 주세요.';
+          else sub.textContent='네트워크 또는 서버 문제일 수 있습니다 ('+msg.slice(0,60)+')';
+        }
+        if(err) err.style.display='flex';
+        badge.textContent='RENDER FAIL';
+        _RETRY_VIEW=n; // 재시도 시 사용
+        return; // 아래 showFallback 건너뜀
+      }
     }
   }
 
@@ -3216,6 +3283,20 @@ async function setRV(n,opts){
   if(hdBtn) hdBtn.style.display='block';
 }
 function renderCurrentHD(){setRV(S.rv||1,{render:true});}
+
+// ── AI 렌더 에러 복구 ─────────────────────────────────
+let _RETRY_VIEW=1;
+function retryCurrentRender(){
+  const err=document.getElementById('render-error');
+  if(err) err.style.display='none';
+  setRV(_RETRY_VIEW||S.rv||1,{render:true});
+}
+function dismissRenderError(){
+  const err=document.getElementById('render-error');
+  if(err) err.style.display='none';
+  // 도식화로 폴백
+  setRV(S.rv||1);
+}
 
 // ── Three.js 3D 자유 회전 뷰어 ────────────────────────
 let V3D=null; // {scene, camera, renderer, controls, body, mat, raf, idleTimer}
@@ -4249,6 +4330,38 @@ async function sendWO(){
     localStorage.setItem('vetti_orders',JSON.stringify(orders));
   }catch(e){}
 
+  // 시연 모드: 서버·Toss 전부 우회하고 즉시 성공 화면
+  if(DEMO_MODE){
+    toast('주문 생성 중…');
+    await new Promise(r=>setTimeout(r,1100));
+    // localStorage만 업데이트 (서버 호출 없음)
+    try{
+      const orders=JSON.parse(localStorage.getItem('vetti_orders')||'[]');
+      const last=orders[orders.length-1];
+      if(last && last.woNum===woNum){
+        last.status='received';
+        last.statusHistory=(last.statusHistory||[]).concat([{status:'received',at:new Date().toISOString(),trigger:'demo'}]);
+        last.payment={provider:'demo',totalAmount:total,approvedAt:new Date().toISOString(),method:'카드(데모)',isTestMode:true};
+        localStorage.setItem('vetti_orders',JSON.stringify(orders));
+      }
+    }catch(e){}
+    // Sent 화면 채우기
+    const senWoEl=document.getElementById('sent-wo-num');
+    if(senWoEl) senWoEl.textContent=woNum;
+    const detailEl=document.getElementById('sent-detail');
+    if(detailEl) detailEl.innerHTML=[
+      {k:'Product',v:(isCustom?'CUSTOM · ':'RENÉE ')+sz.nm},
+      {k:'Material',v:mat.nm},{k:'Colour',v:col.ko},
+      {k:'Customer',v:name},{k:'Paid',v:fmt(total)+' (카드 · 데모)'},
+      {k:'Paid At',v:new Date().toLocaleString('ko-KR')},
+      {k:'Lead Time',v:'4 weeks'},
+    ].map(r=>`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--gray5);font-size:12px;"><span style="color:var(--gray3);">${r.k}</span><span style="font-weight:700;">${r.v}</span></div>`).join('');
+    resetOrderState();
+    go('s-sent');
+    toast('결제 완료 (DEMO) ✓');
+    return;
+  }
+
   // 1) 서버에 pending_payment 상태로 주문 저장
   toast('주문 생성 중…');
   let blobUrl=null;
@@ -5024,6 +5137,19 @@ async function ccSend(directTxt){
   CC_BUSY=true;
   document.getElementById('cc-send').disabled=true;
   ccShowTyping();
+
+  // 시연 모드: /api/chat 호출 없이 스크립트 응답
+  if(DEMO_MODE){
+    await new Promise(r=>setTimeout(r,900+Math.random()*600));
+    ccHideTyping();
+    const content=getDemoCCResponse(txt);
+    const msg={role:'assistant',content,t:ccTime()};
+    CC_MSGS.push(msg);ccRenderMessage(msg);ccSaveHistory();
+    CC_BUSY=false;
+    const sendBtn=document.getElementById('cc-send');if(sendBtn) sendBtn.disabled=false;
+    return;
+  }
+
   try{
     const messages=[{role:'system',content:CC_SYSTEM}];
     CC_MSGS.filter(m=>m.role==='user'||m.role==='assistant').forEach(m=>{
@@ -5150,6 +5276,11 @@ function obDismiss(){
 
 // ── 초기화 ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',async()=>{
+  // 시연 모드 시각적 표시
+  if(DEMO_MODE){
+    document.documentElement.classList.add('demo-mode');
+    console.log('[VETTI] DEMO MODE 활성화 — 네트워크 독립 플로우');
+  }
   await Promise.all(['croc','lizard','ostrich'].flatMap(m=>[1,2,3].map(v=>loadImg(m,v))));
   // 결제 리턴 처리 (Toss successUrl/failUrl에서 돌아왔을 때)
   await handlePaymentReturn();
@@ -5160,6 +5291,52 @@ document.addEventListener('DOMContentLoaded',async()=>{
     setTimeout(()=>go('s-step1'),120);
   }
 });
+
+// ── 시연용 컨시어지 스크립트 응답 ──────────────────────
+const DEMO_CC_RESPONSES=[
+  {match:/비즈니스|업무|미팅|오피스|정장/, content:
+`비즈니스 미팅에 어울리는 크로커다일 블랙 미디엄을 추천드립니다. 정장·오피스 룩에 완벽하게 어울리며, CITES A+ 나일 악어 원피와 24K 골드 하드웨어로 프리미엄 감도를 완성합니다.
+
+\`\`\`vetti-recommend
+{"mat":"croc","col":"noir","hw":"gold","sz":"medium","reason":"정장에 완벽히 어우러지는 타임리스 선택"}
+\`\`\``},
+  {match:/이브닝|저녁|파티|데이트|연회|드레스/, content:
+`이브닝 룩에 어울리는 리자드 버건디 미니를 추천드립니다. 섬세한 격자 비늘과 깊은 와인 컬러가 우아한 인상을 더해드립니다.
+
+\`\`\`vetti-recommend
+{"mat":"lizard","col":"burg","hw":"gold","sz":"mini","reason":"이브닝 룩에 우아함을 더하는 미니 사이즈"}
+\`\`\``},
+  {match:/선물|기념일|특별|프러포즈|와이프|어머니/, content:
+`특별한 선물로는 오스트리치 코냑 미디엄을 추천드립니다. 희소한 퀼 포인트 패턴과 깊이감 있는 코냑 컬러가 시간이 지날수록 빈티지한 멋을 더합니다.
+
+\`\`\`vetti-recommend
+{"mat":"ostrich","col":"cognac","hw":"gold","sz":"medium","reason":"희소성과 유일무이한 텍스처로 완성되는 단 하나의 선물"}
+\`\`\``},
+  {match:/여행|출장|트래블/, content:
+`여행·출장에는 크로커다일 카멜 라지를 추천드립니다. 넉넉한 용량과 튼튼한 습식태닝 60일 공법으로 오래 사용 가능하며, 카멜 컬러는 어떤 옷과도 매칭됩니다.
+
+\`\`\`vetti-recommend
+{"mat":"croc","col":"cognac","hw":"gold","sz":"large","reason":"여행용 라지 사이즈 · 튼튼하고 실용적"}
+\`\`\``},
+];
+const DEMO_CC_GREETINGS=[
+  '안녕하세요! 어떤 상황에 사용하실 가방을 찾고 계신가요? 비즈니스·이브닝·선물 등 용도를 알려주시면 맞춤 추천해드립니다.',
+  '반갑습니다, VETTI 베티입니다. 취향·용도를 간단히 알려주시면 40년 경력 장인이 제작할 가장 잘 어울리는 구성을 찾아드릴게요.',
+];
+const DEMO_CC_FALLBACK=
+`말씀하신 내용에 가장 잘 어울리는 크로커다일 버건디 미디엄을 추천드립니다. VETTI 시그니처 조합으로 어떤 상황에서도 품격을 더해드립니다.
+
+\`\`\`vetti-recommend
+{"mat":"croc","col":"burg","hw":"gold","sz":"medium","reason":"가장 인기 있는 VETTI 시그니처 조합"}
+\`\`\``;
+function getDemoCCResponse(userText){
+  const t=(userText||'').toLowerCase();
+  for(const {match,content} of DEMO_CC_RESPONSES){
+    if(match.test(t)) return content;
+  }
+  if(t.length<14) return DEMO_CC_GREETINGS[Math.floor(Math.random()*DEMO_CC_GREETINGS.length)];
+  return DEMO_CC_FALLBACK;
+}
 
 // ── Toss 결제 리턴 처리 ──────────────────────────────
 async function handlePaymentReturn(){
