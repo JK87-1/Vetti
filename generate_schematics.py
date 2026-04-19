@@ -30,7 +30,7 @@ OUT_DIR.mkdir(exist_ok=True)
 
 REFS = {
     "front": REF_DIR / "Bag1(정면).png",
-    "side":  Path("/Users/junkim/Desktop/악어 가죽 핸드백 선형 드로잉.png"),
+    "side":  REF_DIR / "Bag1(측면).png",
     "back":  REF_DIR / "Bag1(후면).png",
 }
 
@@ -61,33 +61,59 @@ ANGLE_DETAILS = {
     "back": "Keep the back view layout with two symmetric handles and base feet.",
 }
 
-# 재질별 프롬프트 — 형태는 유지하고 가죽 표면 패턴만 바꾸도록 명시
+# 공통 품질 요건 — 모든 재질에 프리펜드됨
+QUALITY_PREAMBLE = (
+    "You are redrawing a handbag technical flat sketch in the style of a Hermès atelier "
+    "production schematic. ABSOLUTE REQUIREMENTS — the output will be recolored downstream, "
+    "so the drawing MUST be clean line-art suitable for digital color fill:\n"
+    "• LINE WEIGHT: main silhouette 1.5–2px pure black (#000000). Internal construction "
+    "  (seams, panel joins) 0.8–1px. Surface pattern lines 0.4–0.7px max.\n"
+    "• INTERIOR FILL: the body inside the outline must read as PURE WHITE (#FFFFFF) "
+    "  everywhere except the pattern marks themselves. NO gray fills, NO hatching, "
+    "  NO scratchy pixels, NO cross-hatching, NO tonal shading, NO gradients.\n"
+    "• SURFACE PATTERN: DRAWN SPARSELY. Pattern marks occupy at most 25–30% of the body "
+    "  area (the rest is clean white). DO NOT fill the entire surface densely — restraint.\n"
+    "• PATTERN CONSISTENCY: lines must be solid and closed (no broken/dashed artifacts, "
+    "  no JPEG noise, no aliasing). Every pattern cell is a distinct closed shape.\n"
+    "• BACKGROUND: pure white #FFFFFF outside the bag silhouette, no drop shadow, "
+    "  no vignette, no paper texture.\n"
+    "• CENTERING & MARGINS: bag is centered with ~8% margin on all sides.\n"
+    "• ABSOLUTELY NO: color, gradients, soft shadows, photo-realistic shading, "
+    "  textured paper, watermarks, text, dimension labels, rulers.\n"
+    "KEEP the exact silhouette, handle shape, stitching positions, hardware positions, "
+    "proportions, and overall outline strokes from the reference image — only the "
+    "SURFACE PATTERN is allowed to change as described below.\n\n"
+)
+
+# 재질별 프롬프트 — QUALITY_PREAMBLE이 앞에 자동 붙음
 MATERIAL_PROMPTS = {
+    "croc": (
+        "SURFACE PATTERN: authentic NILE CROCODILE belly scale pattern — a VERTICAL "
+        "lattice of rectangular/square scales arranged in regular rows, each scale "
+        "approximately 8–12mm at real scale. Larger more square scales in the center "
+        "belly region (3–4 rows wide), tapering to smaller elongated scales near the "
+        "side seams. Scales are drawn as simple closed quadrilaterals separated by "
+        "thin 0.5px black gridlines — like a clean brick-wall pattern, NOT a dense "
+        "crackled texture. Horn-back scales (if present) as a narrow top band of "
+        "slightly raised circular bumps. Keep total pattern density SPARSE and ORDERLY."
+    ),
     "lizard": (
-        "Redraw this luxury handbag technical flat sketch, KEEPING the exact silhouette, "
-        "handles, stitching lines, hardware, proportions, and outline strokes identical. "
-        "Replace ONLY the body surface pattern with authentic LIZARD (tejus/monitor) skin: "
-        "densely packed, SMALL IRREGULAR POLYGONAL SCALES (pentagon/hexagon shapes of varying "
-        "sizes roughly 3-6mm each at real scale), organically tessellated with slight size "
-        "variation — NOT a regular grid, NOT graph paper, NOT square cells. Scales should "
-        "flow along the body contour, slightly larger near the center and smaller near edges. "
-        "Style: crisp black line-art, Hermès/Bottega technical flat sketch, pure white "
-        "background, NO shading, NO gradients, NO color, NO shadows."
+        "SURFACE PATTERN: authentic TEJUS/MONITOR LIZARD skin — small IRREGULAR "
+        "polygonal scales (mixed pentagon and hexagon shapes of varying sizes, 3–6mm "
+        "each at real scale), organically tessellated. NOT a regular grid, NOT graph "
+        "paper, NOT square cells. Scales flow along the body contour — slightly larger "
+        "near the center and smaller near the edges. Draw only the scale outlines (thin "
+        "0.5px black); interior of each scale stays pure white. SPARSE enough that "
+        "~30% of body area is clean white between scale divisions."
     ),
     "ostrich": (
-        "Redraw this luxury handbag technical flat sketch, KEEPING the exact silhouette, "
-        "handles, stitching lines, hardware, proportions, and outline strokes identical. "
-        "Replace ONLY the body surface pattern with authentic OSTRICH leather texture: "
-        "scattered raised quill follicle BUMPS — small round circles (2-4mm diameter) with "
-        "slight shadow underside, irregularly distributed across the bag body (approximately "
-        "100-140 bumps), denser in center and sparser near edges. Between bumps the leather "
-        "should read as smooth/plain (NO scales, NO grid). Style: crisp black line-art, "
-        "Hermès technical flat sketch, pure white background, NO shading on body, NO color."
-    ),
-    "croc": (
-        "Redraw this handbag technical schematic exactly as shown, keeping the silhouette, "
-        "handles, stitching, hardware, proportions, and crocodile scale pattern. "
-        "Pure black line-art on a clean white background, fashion technical illustration style."
+        "SURFACE PATTERN: authentic OSTRICH leather — scattered raised quill follicle "
+        "BUMPS. Draw as small ROUND CIRCLES (2–4mm diameter at real scale) with a tiny "
+        "crescent shadow on the lower-right side of each bump to suggest relief. "
+        "Distribute ~80–120 bumps irregularly across the bag body, denser in the "
+        "center panel and sparser near edges and seams. BETWEEN bumps the leather "
+        "reads as smooth/plain pure white — NO scales, NO grid, NO hatching. "
+        "This is the critical ostrich 'polka-dot relief' look."
     ),
 }
 
@@ -98,7 +124,7 @@ def generate(client, material: str, angle: str, variant: int, size: str, quality
         print(f"  ! 레퍼런스 없음: {ref}", file=sys.stderr)
         return None
 
-    prompt = MATERIAL_PROMPTS[material] + " " + ANGLE_DETAILS.get(angle, "")
+    prompt = QUALITY_PREAMBLE + MATERIAL_PROMPTS[material] + "\n\n" + ANGLE_DETAILS.get(angle, "")
     print(f"  → {material}/{angle} v{variant} 생성 중...")
 
     with open(ref, "rb") as fh:
@@ -137,7 +163,7 @@ def main():
 
     client = OpenAI()
 
-    materials = ["lizard", "ostrich"] if args.material == "all" else [args.material]
+    materials = ["croc", "lizard", "ostrich"] if args.material == "all" else [args.material]
     angles = ["front", "side", "back"] if args.angle == "all" else [args.angle]
 
     total = len(materials) * len(angles) * args.variants

@@ -733,6 +733,41 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
   font-size:10px;color:var(--gray3);margin-top:6px;
 }
 
+/* ══════════ CUSTOM DESIGN ENTRY (step1) ══════════ */
+.cd-entry{
+  border:1px solid var(--gray5);border-radius:8px;
+  background:#fff;padding:14px 16px;margin:16px 0 8px;
+}
+.cd-entry-row{display:flex;align-items:center;gap:12px;}
+.cd-entry-icon{
+  flex:none;width:36px;height:36px;border-radius:50%;
+  background:var(--black);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;
+}
+.cd-entry-txt{flex:1;}
+.cd-entry-title{font-size:13px;font-weight:700;color:var(--black);letter-spacing:.02em;}
+.cd-entry-sub{font-size:11px;color:var(--gray3);margin-top:2px;line-height:1.5;}
+.cd-entry-cta{
+  flex:none;padding:8px 14px;border-radius:4px;
+  background:var(--black);color:#fff;border:none;
+  font-size:11px;font-weight:700;letter-spacing:.08em;
+  font-family:var(--font);cursor:pointer;
+}
+.cd-entry-cta:active{opacity:.8;}
+.cd-entry.on{border-color:var(--black);background:#FAFAF8;}
+.cd-entry-thumb{
+  flex:none;width:52px;height:52px;border-radius:6px;
+  border:1px solid var(--gray5);object-fit:cover;background:#fff;
+}
+.cd-entry-remove{
+  flex:none;padding:7px 12px;border-radius:4px;
+  background:#fff;color:var(--gray2);border:1px solid var(--gray5);
+  font-size:10px;font-weight:700;letter-spacing:.06em;
+  font-family:var(--font);cursor:pointer;
+}
+.cd-entry-remove:active{background:var(--gray5);}
+
 /* ══════════ CUSTOM SCHEMATIC LOADING ══════════ */
 .cs-loading{
   position:fixed;inset:0;z-index:1500;
@@ -1384,6 +1419,27 @@ body.has-bottombar .cc-teaser{bottom:154px;}
       <div class="sketch-mat-tag" id="mat-tag">악어가죽 · 버건디</div>
     </div>
 
+    <!-- 커스텀 디자인 진입점 -->
+    <div class="cd-entry" id="cd-entry">
+      <div class="cd-entry-row" id="cd-entry-off">
+        <div class="cd-entry-icon">✦</div>
+        <div class="cd-entry-txt">
+          <div class="cd-entry-title">내 디자인으로 만들기</div>
+          <div class="cd-entry-sub">원하는 가방 사진을 올리면 AI가 도식화로 변환해 맞춤 제작합니다.</div>
+        </div>
+        <input type="file" id="cd-entry-file" accept="image/*" style="display:none;" onchange="cdOnFile(event)">
+        <button type="button" class="cd-entry-cta" onclick="document.getElementById('cd-entry-file').click()">UPLOAD</button>
+      </div>
+      <div class="cd-entry-row" id="cd-entry-on" style="display:none;">
+        <img class="cd-entry-thumb" id="cd-entry-thumb" alt="reference"/>
+        <div class="cd-entry-txt">
+          <div class="cd-entry-title">커스텀 디자인 활성화</div>
+          <div class="cd-entry-sub" id="cd-entry-status">업로드한 디자인으로 제작됩니다.</div>
+        </div>
+        <button type="button" class="cd-entry-remove" onclick="cdCancel()">해제</button>
+      </div>
+    </div>
+
     <!-- 소재 -->
     <div class="opt">
       <div class="opt-label">Material</div>
@@ -1763,32 +1819,50 @@ function punchHandleHoles(canvas,tag){
       regions.push(r);
     }
   }
-  regions.sort((a,b)=>b.size-a.size);
-  const dbg=`[${tag||''}] size=${w}×${h} bg=${nBg} line=${nLine} fill=${nFill} regions=${regions.length}\n`+
-    regions.slice(0,6).map((r,i)=>`#${i+1} size=${r.size} box=[${r.minX},${r.minY}→${r.maxX},${r.maxY}]`).join('\n');
-  console.log(dbg);
-  let box=document.getElementById('vetti-debug');
-  if(!box){
-    box=document.createElement('pre');
-    box.id='vetti-debug';
-    box.style.cssText='position:fixed;left:8px;bottom:8px;z-index:9999;background:rgba(0,0,0,.88);color:#0f0;font:11px/1.4 monospace;padding:10px 12px;max-width:380px;max-height:50vh;overflow:auto;border-radius:6px;white-space:pre-wrap;';
-    document.body.appendChild(box);
+  // Identify holes (handle arches, V-gussets) — regions enclosed by outlines
+  // that should be transparent to show the page background through.
+  //
+  // Algorithm (verified against all 9 embedded images):
+  //   1. Body = region with the LARGEST BBOX AREA. Works for both dense-scale
+  //      images (body is a sparse grid that spans the full silhouette) and
+  //      clean images (body is a solid fill covering most of the silhouette).
+  //   2. Candidates = every OTHER region, filtered by:
+  //       • bbox_area between 1%–30% of silhouette bbox
+  //       • density (pixel-count / bbox-area) ≥ 0.35 (rejects sparse fragments
+  //         like stray scale-line artifacts that span a wide bbox but have
+  //         very few pixels)
+  //       • width & height ≥ 25px
+  //       • not touching the image edge
+  //   3. Punch top 3 candidates ranked by bbox area (desc).
+  let silX1=w, silY1=h, silX2=0, silY2=0;
+  for(let i=0;i<N;i++){
+    if(px[i*4+3]>=16){
+      const y=(i/w)|0, xx=i-y*w;
+      if(xx<silX1)silX1=xx; if(xx>silX2)silX2=xx;
+      if(y<silY1)silY1=y; if(y>silY2)silY2=y;
+    }
   }
-  box.textContent=(box.textContent?box.textContent+'\n\n':'')+dbg;
+  const silBB=Math.max(1,(silX2-silX1+1)*(silY2-silY1+1));
+  const bboxArea=r=>(r.maxX-r.minX+1)*(r.maxY-r.minY+1);
+  // Find body (biggest bbox)
+  regions.sort((a,b)=>bboxArea(b)-bboxArea(a));
   if(regions.length<2) return;
-  const body=regions[0];
-  const minHoleSize=Math.max(200,body.size*0.005);
-  const maxHoleSize=body.size*0.15;
+  const bodyId=regions[0].id;
   const candidates=[];
   for(let i=1;i<regions.length;i++){
     const r=regions[i];
-    if(r.size<minHoleSize||r.size>maxHoleSize) continue;
-    const rw=r.maxX-r.minX, rh=r.maxY-r.minY;
-    if(rw<30||rh<30) continue;
+    if(r.id===bodyId) continue;
     if(r.minX<=2||r.maxX>=w-3||r.minY<=2||r.maxY>=h-3) continue;
+    const bb=bboxArea(r);
+    if(bb<silBB*0.01) continue;
+    if(bb>silBB*0.30) continue;
+    const density=r.size/bb;
+    if(density<0.35) continue;
+    const rw=r.maxX-r.minX, rh=r.maxY-r.minY;
+    if(rw<25||rh<25) continue;
     candidates.push(r);
   }
-  candidates.sort((a,b)=>b.size-a.size);
+  candidates.sort((a,b)=>bboxArea(b)-bboxArea(a));
   const holes=candidates.slice(0,3);
   if(!holes.length) return;
   const holeIds=new Set(holes.map(r=>r.id));
@@ -1808,6 +1882,7 @@ function loadImg(mat, v){
       const c=document.createElement('canvas');
       c.width=img.naturalWidth;c.height=img.naturalHeight;
       c.getContext('2d').drawImage(img,0,0);
+      try{punchHandleHoles(c,key);}catch(e){console.warn('[punchHandleHoles]',key,e.message);}
       CACHE[key]={canvas:c,w:c.width,h:c.height};
       res(CACHE[key]);
     };
@@ -1830,32 +1905,32 @@ function colorize(canvas, cache, cr, cg, cb){
   // 1) base sketch
   ctx.drawImage(src,0,0);
 
-  // 2) multiply a slightly lifted color so midtones don't crush
-  const lift=(v)=>Math.min(255,Math.round(v*0.85+40));
+  // 2) multiply — preserve saturation (gentle lift only so deep colors don't crush to black)
+  const lift=(v)=>Math.min(255,Math.round(v*0.94+8));
   ctx.globalCompositeOperation='multiply';
   ctx.fillStyle=`rgb(${lift(cr)},${lift(cg)},${lift(cb)})`;
   ctx.fillRect(0,0,w,h);
 
-  // 3) soft highlight from upper-left for dimension
+  // 3) soft highlight upper-left — subtle sheen, doesn't wash color
   ctx.globalCompositeOperation='soft-light';
-  const hg=ctx.createRadialGradient(w*0.35,h*0.22,w*0.05,w*0.35,h*0.22,Math.max(w,h)*0.7);
-  hg.addColorStop(0,'rgba(255,255,255,0.75)');
-  hg.addColorStop(0.45,'rgba(255,255,255,0.15)');
+  const hg=ctx.createRadialGradient(w*0.35,h*0.22,w*0.05,w*0.35,h*0.22,Math.max(w,h)*0.65);
+  hg.addColorStop(0,'rgba(255,255,255,0.32)');
+  hg.addColorStop(0.4,'rgba(255,255,255,0.08)');
   hg.addColorStop(1,'rgba(255,255,255,0)');
   ctx.fillStyle=hg;
   ctx.fillRect(0,0,w,h);
 
-  // 4) subtle shadow on lower-right for depth
+  // 4) deeper shadow lower-right for leather depth
   ctx.globalCompositeOperation='multiply';
   const sg=ctx.createRadialGradient(w*0.7,h*0.85,w*0.1,w*0.7,h*0.85,Math.max(w,h)*0.75);
-  sg.addColorStop(0,'rgba(60,40,50,0.18)');
+  sg.addColorStop(0,'rgba(20,15,20,0.24)');
   sg.addColorStop(1,'rgba(255,255,255,0)');
   ctx.fillStyle=sg;
   ctx.fillRect(0,0,w,h);
 
   // 5) re-draw original lines on top at low opacity for crisp edges
   ctx.globalCompositeOperation='source-over';
-  ctx.globalAlpha=0.35;
+  ctx.globalAlpha=0.4;
   ctx.drawImage(src,0,0);
   ctx.globalAlpha=1;
 
@@ -1882,7 +1957,7 @@ function go(id){
   const withBar=['s-step1','s-result','s-workorder'].includes(id);
   document.body.classList.toggle('has-bottombar',withBar);
   if(id==='s-workorder') startWOGeneration();
-  if(id==='s-step1') {initStep1();updatePrice();initCustomSchematic();initCustomViewSection();}
+  if(id==='s-step1') {initStep1();updatePrice();refreshCdEntry();initCustomSchematic();initCustomViewSection();}
   if(id==='s-orders') renderOrders();
 }
 
@@ -1918,7 +1993,7 @@ function renderOrders(){
         <div class="order-status">발송완료</div>
       </div>
       <div class="order-spec">
-        <div class="order-spec-row"><span>모델</span><b>${sp.model||'RENÉE'} ${sp.size||''}</b></div>
+        <div class="order-spec-row"><span>모델</span><b>${sp.customDesign?'<span style="background:var(--black);color:#fff;font-size:9px;letter-spacing:.1em;padding:2px 6px;border-radius:2px;margin-right:6px;">CUSTOM</span>':''}${sp.model||'RENÉE'} ${sp.size||''}</b></div>
         <div class="order-spec-row"><span>소재</span><b>${sp.material||''}</b></div>
         <div class="order-spec-row"><span>컬러</span><b>${sp.colourKo||sp.colour||''}</b></div>
         <div class="order-spec-row"><span>하드웨어</span><b>${sp.hardware||''}</b></div>
@@ -1978,6 +2053,56 @@ async function cvOnFile(view,e){
   e.target.value='';
   toast((view==='side'?'측면':'후면')+' 참고 이미지 업로드됨');
 }
+// ── 커스텀 디자인 진입점 (step1 최상단) ─────────────────
+function refreshCdEntry(){
+  const off=document.getElementById('cd-entry-off');
+  const on=document.getElementById('cd-entry-on');
+  const wrap=document.getElementById('cd-entry');
+  if(!off||!on||!wrap) return;
+  if(S.customDesign && S.customImg){
+    off.style.display='none';
+    on.style.display='flex';
+    wrap.classList.add('on');
+    const thumb=document.getElementById('cd-entry-thumb');
+    if(thumb) thumb.src=S.customImg;
+    const status=document.getElementById('cd-entry-status');
+    if(status) status.textContent=S.customSchematicUrl?'도식화 생성 완료 · AI RENDER 준비됨':'AI RENDER 시 도식화가 자동 생성됩니다';
+  } else {
+    off.style.display='flex';
+    on.style.display='none';
+    wrap.classList.remove('on');
+  }
+}
+async function cdOnFile(e){
+  const file=e.target.files?.[0];
+  if(!file) return;
+  const b64=await ccResizeImg(file,512);
+  S.customDesign=true;
+  S.customImg=b64;
+  S.customSchematicUrl=null;
+  e.target.value='';
+  refreshCdEntry();
+  initCustomViewSection();
+  const badge=document.getElementById('mat-tag');
+  if(badge) badge.textContent='CUSTOM DESIGN';
+  toast('커스텀 디자인이 적용되었습니다');
+  await initCustomSchematic();
+  refreshCdEntry();
+}
+function cdCancel(){
+  if(!confirm('커스텀 디자인을 해제하시겠습니까? 업로드한 이미지가 제거됩니다.')) return;
+  S.customDesign=false;
+  S.customImg=null;
+  S.customSchematicUrl=null;
+  S.customSideImg=null;S.customSideSchematic=null;
+  S.customBackImg=null;S.customBackSchematic=null;
+  refreshCdEntry();
+  initCustomViewSection();
+  renderPreview();
+  updateTag();
+  toast('커스텀 디자인이 해제되었습니다');
+}
+
 function initCustomViewSection(){
   const sec=document.getElementById('custom-views-section');
   if(!sec) return;
@@ -2931,7 +3056,7 @@ function buildWO(){
 }
 
 // ── 발송 & 토스트 ─────────────────────────────────────
-function sendWO(){
+async function sendWO(){
   const v=id=>document.getElementById(id).value.trim();
   const name=v('cust-name'),phone=v('cust-phone'),email=v('cust-email'),addr=v('cust-addr'),note=v('cust-note');
   if(!name||!phone||!email||!addr){
@@ -2940,17 +3065,32 @@ function sendWO(){
     return;
   }
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('이메일 형식을 확인해주세요');return;}
+  const phoneDigits=phone.replace(/\D/g,'');
+  if(phoneDigits.length<9||phoneDigits.length>13){
+    toast('연락처 형식을 확인해주세요 (예: 010-1234-5678)');
+    document.getElementById('cust-phone').focus();
+    return;
+  }
 
   const mat=gm(),col=gc(),sz=gs(),hw=gh();
   const woNum=document.getElementById('wo-badge').textContent;
   const total=gtot();
   const now=new Date();
 
+  const isCustom=!!S.customDesign;
+  const customRefs={
+    front:S.customSchematicUrl||null,
+    side:S.customSideSchematic||null,
+    back:S.customBackSchematic||null,
+  };
+
   const order={
     woNum,createdAt:now.toISOString(),
     customer:{name,phone,email,addr,note},
-    spec:{model:'RENÉE',material:mat.nm,materialEn:mat.en,origin:mat.origin,tannage:mat.tan,
-          colour:col.nm,colourKo:col.ko,size:sz.nm,sizeDim:sz.dim,hardware:hw.nm,monogram:S.mono||''},
+    spec:{model:isCustom?'CUSTOM':'RENÉE',customDesign:isCustom,
+          material:mat.nm,materialEn:mat.en,origin:mat.origin,tannage:mat.tan,
+          colour:col.nm,colourKo:col.ko,size:sz.nm,sizeDim:sz.dim,hardware:hw.nm,monogram:S.mono||'',
+          customRefs:isCustom?customRefs:null},
     total,leadTime:'4 weeks'
   };
   try{
@@ -2959,8 +3099,17 @@ function sendWO(){
     localStorage.setItem('vetti_orders',JSON.stringify(orders));
   }catch(e){}
 
+  const customLines=isCustom?[
+    '',
+    `■ 커스텀 디자인 (CUSTOM)`,
+    `• 디자인 유형: 고객 맞춤 제작`,
+    customRefs.front?`• FRONT 도식화: ${customRefs.front}`:'',
+    customRefs.side ?`• SIDE 도식화: ${customRefs.side}` :`• SIDE: VETTI 표준 구조 적용`,
+    customRefs.back ?`• BACK 도식화: ${customRefs.back}` :`• BACK: VETTI 표준 구조 적용`,
+  ]:[];
+
   const body=[
-    `[VETTI 작업지시서] ${woNum}`,'',
+    `[VETTI 작업지시서] ${woNum}${isCustom?' (CUSTOM)':''}`,'',
     `■ 주문 정보`,
     `• 주문번호: ${woNum}`,
     `• 주문일시: ${now.toLocaleString('ko-KR')}`,
@@ -2973,30 +3122,68 @@ function sendWO(){
     `• 배송지: ${addr}`,
     note?`• 요청사항: ${note}`:'','',
     `■ 제품 사양`,
-    `• 모델: RENÉE`,
+    `• 모델: ${isCustom?'CUSTOM (고객 맞춤)':'RENÉE'}`,
     `• 소재: ${mat.nm} (${mat.en}) · ${mat.origin} · ${mat.tan}`,
     `• 컬러: ${col.nm} (${col.ko})`,
     `• 사이즈: ${sz.nm} ${sz.dim}`,
     `• 하드웨어: ${hw.nm}`,
     S.mono?`• 모노그램: ${S.mono}`:'',
+    ...customLines,
   ].filter(Boolean).join('\n');
 
   if(navigator.clipboard){navigator.clipboard.writeText(body).catch(()=>{});}
 
-  const subject=`[VETTI] 신규 작업지시서 ${woNum} - ${name}`;
+  // 서버 저장 시도 (3초 타임아웃, 실패해도 흐름 진행)
+  let serverSaved=false;
+  try{
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),3000);
+    const r=await fetch(API_BASE+'/api/orders',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(order),signal:ctrl.signal,
+    });
+    clearTimeout(tid);
+    if(r.ok){
+      const d=await r.json();
+      serverSaved=!!d.ok;
+      if(d.url){try{
+        const orders=JSON.parse(localStorage.getItem('vetti_orders')||'[]');
+        const last=orders[orders.length-1];
+        if(last && last.woNum===woNum){last.serverUrl=d.url;localStorage.setItem('vetti_orders',JSON.stringify(orders));}
+      }catch(e){}}
+    }
+  }catch(e){console.warn('[VETTI] /api/orders failed:',e.message);}
+
+  const subject=`[VETTI] 신규 작업지시서 ${woNum}${isCustom?' · CUSTOM':''} - ${name}`;
   const mailto=`mailto:${VETTI_CONFIG.orderEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.location.href=mailto;
 
-  toast('메일 앱으로 전송됩니다 ✓');
+  toast(serverSaved?'주문이 접수되었습니다 ✓':'메일 앱으로 전송됩니다 ✓');
 
   document.getElementById('sent-detail').innerHTML=[
-    {k:'Order No.',v:woNum},{k:'Product',v:'RENÉE '+sz.nm},
+    {k:'Order No.',v:woNum},
+    {k:'Product',v:(isCustom?'CUSTOM · ':'RENÉE ')+sz.nm},
     {k:'Material',v:mat.nm},{k:'Colour',v:col.ko},
     {k:'Customer',v:name},{k:'Total',v:fmt(total)},
     {k:'Lead Time',v:'4 weeks'},
   ].map(r=>`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--gray5);font-size:12px;"><span style="color:var(--gray3);">${r.k}</span><span style="font-weight:700;">${r.v}</span></div>`).join('');
 
+  resetOrderState();
   setTimeout(()=>go('s-sent'),600);
+}
+
+function resetOrderState(){
+  S.mono='';
+  S.customDesign=false;
+  S.customImg=null;
+  S.customSchematicUrl=null;
+  S.customSideImg=null;S.customSideSchematic=null;
+  S.customBackImg=null;S.customBackSchematic=null;
+  S.customStructure='tote';
+  S.cv=1;S.rv=1;
+  ['cust-name','cust-phone','cust-email','cust-addr','cust-note','mono-inp'].forEach(id=>{
+    const el=document.getElementById(id);if(el) el.value='';
+  });
 }
 
 function toast(msg){
@@ -3468,7 +3655,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   <div class="ob-sheet">
     <div class="ob-logo">VETTI</div>
     <div class="ob-headline">나만의 가방을 만들어 보세요</div>
-    <div class="ob-sub">AI 큐레이터가 소재·색상·사이즈를 추천하고,<br>장인이 직접 제작합니다.</div>
+    <div class="ob-sub">AI 큐레이터 추천부터 내 디자인 업로드까지,<br>장인이 직접 제작합니다.</div>
     <div class="ob-steps">
       <div class="ob-step">
         <div class="ob-step-num">1</div>
@@ -3476,7 +3663,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       </div>
       <div class="ob-step">
         <div class="ob-step-num">2</div>
-        <div class="ob-step-txt"><strong>소재·색상·사이즈 선택</strong><br>크로커다일 · 리자드 · 오스트리치 중 취향에 맞게</div>
+        <div class="ob-step-txt"><strong>소재·색상 선택 또는 내 디자인 업로드</strong><br>크로커다일·리자드·오스트리치 · 원하는 가방 사진으로도 OK</div>
       </div>
       <div class="ob-step">
         <div class="ob-step-num">3</div>

@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent
 GEN = ROOT / "generated" / "clean"   # postprocess_imgs.py 결과물
-HTML = ROOT / "vetti_toss.html"
+HTML = ROOT / "index.html"
 
 ANGLES = {1: "front", 2: "side", 3: "back"}
 MATERIALS = ["croc", "lizard", "ostrich"]

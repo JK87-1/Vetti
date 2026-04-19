@@ -22,9 +22,10 @@ OUT.mkdir(exist_ok=True)
 REF_DIR = Path("/Users/junkim/Desktop/베티(VETTI)/이미지 레퍼런스")
 
 SOURCES = {
-    "croc_front":   REF_DIR / "Bag1(정면).png",
-    "croc_side":    Path("/Users/junkim/Desktop/악어 가죽 핸드백 선형 드로잉.png"),
-    "croc_back":    REF_DIR / "Bag1(후면).png",
+    # 재생성 파이프라인: croc도 generated/에서 가져옴 (원본 레퍼런스가 아닌 GPT 재생성본)
+    "croc_front":   GEN / "croc_front.png",
+    "croc_side":    GEN / "croc_side.png",
+    "croc_back":    GEN / "croc_back.png",
     "lizard_front": GEN / "lizard_front.png",
     "lizard_side":  GEN / "lizard_side.png",
     "lizard_back":  GEN / "lizard_back.png",
