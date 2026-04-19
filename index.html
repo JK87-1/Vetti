@@ -748,6 +748,84 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
   font-size:10px;color:var(--gray3);margin-top:6px;
 }
 
+/* ══════════ COMPANY FOOTER ══════════ */
+.vetti-footer{
+  background:#F5F3EF;
+  border-top:1px solid var(--gray5);
+  padding:48px 24px 40px;
+  margin-top:8px;
+}
+.vf-inner{max-width:430px;margin:0 auto;}
+.vf-eyebrow{
+  font-size:9px;font-weight:700;color:var(--gray3);
+  letter-spacing:.25em;text-transform:uppercase;margin-bottom:14px;
+}
+.vf-brand{display:flex;align-items:baseline;gap:10px;margin-bottom:28px;}
+.vf-brand-en{
+  font-size:22px;font-weight:800;color:var(--black);
+  letter-spacing:.12em;
+}
+.vf-brand-ko{
+  font-size:12px;font-weight:600;color:var(--gray3);
+  letter-spacing:.02em;
+}
+.vf-rows{
+  border-top:1px solid rgba(10,10,10,.08);
+  border-bottom:1px solid rgba(10,10,10,.08);
+  padding:4px 0;margin-bottom:24px;
+}
+.vf-row{
+  display:flex;align-items:flex-start;gap:16px;
+  padding:11px 0;
+  border-bottom:1px solid rgba(10,10,10,.05);
+}
+.vf-row:last-child{border-bottom:none;}
+.vf-k{
+  flex:none;width:98px;
+  font-size:10px;font-weight:700;color:var(--gray3);
+  letter-spacing:.1em;text-transform:uppercase;
+  padding-top:1px;
+}
+.vf-v{
+  flex:1;font-size:12px;color:var(--black);
+  font-weight:600;line-height:1.55;
+  font-variant-numeric:tabular-nums;
+}
+.vf-v-sub{
+  display:inline-block;font-size:10.5px;color:var(--gray3);
+  font-weight:500;letter-spacing:.01em;margin-top:3px;
+}
+.vf-contact{
+  display:flex;gap:0;
+  border:1px solid rgba(10,10,10,.1);
+  border-radius:4px;overflow:hidden;
+  margin-bottom:24px;background:#fff;
+}
+.vf-contact-item{
+  flex:1;display:flex;flex-direction:column;
+  padding:14px 16px;text-decoration:none;
+  transition:background .15s;
+}
+.vf-contact-item:first-child{border-right:1px solid rgba(10,10,10,.08);}
+.vf-contact-item:active{background:#FAFAF8;}
+.vf-contact-lbl{
+  font-size:9px;font-weight:700;color:var(--gray3);
+  letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px;
+}
+.vf-contact-val{
+  font-size:12.5px;font-weight:700;color:var(--black);
+  font-variant-numeric:tabular-nums;letter-spacing:.01em;
+}
+.vf-bottom{text-align:left;}
+.vf-copy{
+  font-size:10px;color:var(--gray3);font-weight:600;
+  letter-spacing:.04em;margin-bottom:4px;
+}
+.vf-legal{
+  font-size:9.5px;color:var(--gray4);line-height:1.6;
+  letter-spacing:.01em;
+}
+
 /* ══════════ CUSTOM DESIGN ENTRY (step1) ══════════ */
 .cd-entry{
   border:1px solid var(--gray5);border-radius:8px;
@@ -1409,6 +1487,52 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 
     </div>
   </div>
+
+  <!-- ══ COMPANY FOOTER ═══════════════════════════════ -->
+  <footer class="vetti-footer">
+    <div class="vf-inner">
+      <div class="vf-eyebrow">Company</div>
+      <div class="vf-brand">
+        <span class="vf-brand-en">VETTIER</span>
+        <span class="vf-brand-ko">베티에르</span>
+      </div>
+
+      <div class="vf-rows">
+        <div class="vf-row">
+          <span class="vf-k">주소</span>
+          <span class="vf-v">서울시 강남구 청담동 19-10, 4F</span>
+        </div>
+        <div class="vf-row">
+          <span class="vf-k">사업자등록번호</span>
+          <span class="vf-v">297-75-00301</span>
+        </div>
+        <div class="vf-row">
+          <span class="vf-k">통신판매신고</span>
+          <span class="vf-v">제2019-서울강남-04052호</span>
+        </div>
+        <div class="vf-row">
+          <span class="vf-k">입금계좌</span>
+          <span class="vf-v">국민은행 809101-04-207810<br><span class="vf-v-sub">예금주: 베티에르</span></span>
+        </div>
+      </div>
+
+      <div class="vf-contact">
+        <a href="tel:0502-1944-1233" class="vf-contact-item">
+          <span class="vf-contact-lbl">Customer Service</span>
+          <span class="vf-contact-val">0502 1944 1233</span>
+        </a>
+        <a href="mailto:support@vetti.kr" class="vf-contact-item">
+          <span class="vf-contact-lbl">Email</span>
+          <span class="vf-contact-val">support@vetti.kr</span>
+        </a>
+      </div>
+
+      <div class="vf-bottom">
+        <div class="vf-copy">© 2026 VETTIER. All rights reserved.</div>
+        <div class="vf-legal">본 사이트의 모든 콘텐츠는 저작권법에 의해 보호됩니다.</div>
+      </div>
+    </div>
+  </footer>
 </div>
 
 <!-- ══ STEP 1: 소재·컬러·옵션 ════════════════════════ -->
