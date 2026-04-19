@@ -1827,7 +1827,10 @@ function punchHandleHoles(canvas,tag){
   //      images (body is a sparse grid that spans the full silhouette) and
   //      clean images (body is a solid fill covering most of the silhouette).
   //   2. Candidates = every OTHER region, filtered by:
-  //       • bbox_area between 1%–30% of silhouette bbox
+  //       • bbox_area between 5%–30% of silhouette bbox — the 5% floor
+  //         rejects handle-strap interiors and edge artifacts (which sit
+  //         in the 1.3–2.0% range on all 9 reference images) while every
+  //         real arch/gusset lands at 6.9% or higher.
   //       • density (pixel-count / bbox-area) ≥ 0.35 (rejects sparse fragments
   //         like stray scale-line artifacts that span a wide bbox but have
   //         very few pixels)
@@ -1854,7 +1857,7 @@ function punchHandleHoles(canvas,tag){
     if(r.id===bodyId) continue;
     if(r.minX<=2||r.maxX>=w-3||r.minY<=2||r.maxY>=h-3) continue;
     const bb=bboxArea(r);
-    if(bb<silBB*0.01) continue;
+    if(bb<silBB*0.05) continue;
     if(bb>silBB*0.30) continue;
     const density=r.size/bb;
     if(density<0.35) continue;
