@@ -19,6 +19,8 @@
 <link rel="canonical" href="https://vetti.kr">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='8' fill='%230A0A0A'/><text x='32' y='44' font-family='Helvetica,Arial,sans-serif' font-size='34' font-weight='800' text-anchor='middle' fill='%23FFFFFF' letter-spacing='1'>V</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='32' fill='%230A0A0A'/><text x='90' y='122' font-family='Helvetica,Arial,sans-serif' font-size='96' font-weight='800' text-anchor='middle' fill='%23FFFFFF' letter-spacing='2'>V</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" defer></script>
 <style>
 /* ── 리셋 & 기반 ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -758,6 +760,111 @@ body{font-family:var(--font);background:var(--white);color:var(--black);
 }
 .cv-upload-preview .cv-status{
   font-size:10px;color:var(--gray3);margin-top:6px;
+}
+
+/* ══════════ ADMIN DASHBOARD ══════════ */
+.admin-wrap{padding:24px 20px 80px;}
+.admin-desc{font-size:11.5px;color:var(--gray3);line-height:1.6;margin-bottom:22px;}
+.admin-gate{
+  border:1px solid var(--gray5);border-radius:8px;padding:24px 20px;background:#FAFAF8;
+}
+.admin-gate-title{font-size:14px;font-weight:800;color:var(--black);margin-bottom:6px;}
+.admin-gate-sub{font-size:11px;color:var(--gray3);margin-bottom:16px;}
+#admin-token-input{
+  display:block;width:100%;padding:13px 14px;
+  border:1px solid var(--gray5);border-radius:4px;
+  font-family:var(--font);font-size:13px;background:#fff;outline:none;
+  margin-bottom:12px;letter-spacing:.02em;
+}
+#admin-token-input:focus{border-color:var(--black);}
+.admin-err{font-size:11px;color:#8B0000;margin-top:10px;min-height:14px;}
+.admin-toolbar{display:flex;gap:8px;margin-bottom:14px;}
+.admin-btn{
+  padding:9px 14px;border:1px solid var(--black);border-radius:3px;
+  background:var(--black);color:#fff;font-family:var(--font);
+  font-size:10.5px;font-weight:700;letter-spacing:.1em;cursor:pointer;
+  text-transform:uppercase;
+}
+.admin-btn-ghost{background:#fff;color:var(--gray2);border-color:var(--gray5);}
+.admin-order{
+  border:1px solid var(--gray5);border-radius:6px;background:#fff;
+  padding:16px 18px;margin-bottom:12px;cursor:pointer;transition:border-color .15s;
+}
+.admin-order:active{background:#FAFAF8;}
+.admin-order:hover{border-color:var(--black);}
+.admin-order-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.admin-order-num{font-size:14px;font-weight:800;letter-spacing:.04em;color:var(--black);font-variant-numeric:tabular-nums;}
+.admin-order-date{font-size:10px;color:var(--gray3);margin-top:2px;letter-spacing:.02em;}
+.admin-order-tag{
+  flex:none;font-size:9px;font-weight:800;letter-spacing:.14em;
+  padding:3px 7px;border-radius:2px;background:#F0F0F0;color:var(--gray2);
+}
+.admin-order-tag.CUSTOM{background:var(--black);color:#fff;}
+.admin-order-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;}
+.admin-order-cell{font-size:11px;}
+.admin-order-cell span{color:var(--gray3);margin-right:5px;}
+.admin-order-cell b{color:var(--black);font-weight:700;}
+.admin-order-foot{
+  display:flex;justify-content:space-between;align-items:center;
+  border-top:1px solid var(--gray5);padding-top:10px;margin-top:10px;
+}
+.admin-order-cust{font-size:11px;color:var(--gray2);font-weight:600;}
+.admin-order-total{font-size:13px;font-weight:800;color:var(--black);font-variant-numeric:tabular-nums;}
+.admin-empty{
+  text-align:center;padding:50px 20px;
+  border:1px dashed var(--gray5);border-radius:8px;
+  color:var(--gray3);font-size:12px;line-height:1.6;
+}
+/* Detail overlay */
+.admin-detail{
+  position:fixed;inset:0;z-index:2000;
+  background:rgba(10,10,10,.6);
+  display:flex;align-items:flex-end;justify-content:center;
+  animation:fadeIn .25s ease-out;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.admin-detail-inner{
+  width:100%;max-width:430px;max-height:88vh;
+  background:#fff;border-radius:14px 14px 0 0;
+  overflow-y:auto;padding:36px 22px 32px;position:relative;
+  animation:slideUp .3s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes slideUp{from{transform:translateY(30px);opacity:.7}to{transform:translateY(0);opacity:1}}
+.admin-detail-close{
+  position:absolute;top:14px;right:14px;
+  width:32px;height:32px;border:none;background:none;
+  font-size:20px;cursor:pointer;color:var(--gray2);
+}
+.ad-sec{margin-bottom:22px;}
+.ad-sec-title{
+  font-size:9px;font-weight:800;letter-spacing:.22em;
+  color:var(--gray3);text-transform:uppercase;margin-bottom:8px;
+  padding-bottom:6px;border-bottom:1px solid var(--gray5);
+}
+.ad-row{
+  display:flex;justify-content:space-between;gap:12px;
+  padding:7px 0;font-size:12px;
+  border-bottom:1px solid rgba(10,10,10,.05);
+}
+.ad-row:last-child{border-bottom:none;}
+.ad-row span{color:var(--gray3);}
+.ad-row b{color:var(--black);font-weight:700;text-align:right;font-variant-numeric:tabular-nums;}
+.ad-note{
+  font-size:11px;color:var(--gray2);line-height:1.6;
+  padding:10px 12px;background:#FAFAF8;border-radius:4px;
+}
+.ad-proc-item{
+  padding:8px 0;border-bottom:1px solid rgba(10,10,10,.05);
+  font-size:11px;
+}
+.ad-proc-item b{color:var(--black);}
+.ad-proc-item em{color:var(--gray3);font-style:normal;display:block;margin-top:2px;font-size:10.5px;line-height:1.5;}
+.ad-json-btn{
+  display:block;width:100%;padding:10px;
+  border:1px solid var(--gray5);border-radius:4px;background:#fff;
+  color:var(--gray2);font-family:var(--font);font-size:10.5px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;cursor:pointer;
+  margin-top:6px;
 }
 
 /* ══════════ STANDARDS PANEL (result screen) ══════════ */
@@ -1779,13 +1886,13 @@ body.has-bottombar .cc-teaser{bottom:154px;}
 
   <!-- 결과 -->
   <div id="ai-result" style="display:none;" class="result-wrap">
-    <!-- 뷰 탭 + 360° 자동 회전 토글 -->
+    <!-- 뷰 탭 + 3D 자유 회전 -->
     <div class="rvtabs">
-      <button class="rvtab on" id="rvt1" onclick="setRV(1);stopAutoRotate()">FRONT</button>
-      <button class="rvtab" id="rvt2" onclick="setRV(2);stopAutoRotate()">SIDE</button>
-      <button class="rvtab" id="rvt3" onclick="setRV(3);stopAutoRotate()">BACK</button>
-      <button class="rvtab rvtab-360" id="rv-auto" onclick="toggleAutoRotate()" aria-label="360도 자동 회전">
-        <span class="rv360-icon">◐</span><span class="rv360-txt">360°</span>
+      <button class="rvtab on" id="rvt1" onclick="setRV(1);exit3D()">FRONT</button>
+      <button class="rvtab" id="rvt2" onclick="setRV(2);exit3D()">SIDE</button>
+      <button class="rvtab" id="rvt3" onclick="setRV(3);exit3D()">BACK</button>
+      <button class="rvtab rvtab-360" id="rv-3d" onclick="toggle3D()" aria-label="3D 자유 회전">
+        <span class="rv360-icon">◐</span><span class="rv360-txt">3D</span>
       </button>
     </div>
 
@@ -1795,6 +1902,8 @@ body.has-bottombar .cc-teaser{bottom:154px;}
       <button class="rs-key" id="rs-key" onclick="setOpenAIKey()" title="OpenAI API 키 설정" style="display:none;">⚙</button>
       <canvas id="result-cv"></canvas>
       <img id="result-img" style="display:none;" alt="AI render"/>
+      <div id="result-3d" style="display:none;position:absolute;inset:0;cursor:grab;touch-action:none;"></div>
+      <div id="result-3d-hint" style="display:none;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(10,10,10,.72);color:#fff;font-size:10px;letter-spacing:.08em;padding:6px 12px;border-radius:20px;pointer-events:none;font-weight:600;">손가락으로 드래그해서 회전</div>
       <div class="render-overlay" id="render-overlay" style="display:none;">
         <div class="ro-spinner"></div>
         <div class="ro-title">이미지 생성 중</div>
@@ -1953,6 +2062,44 @@ body.has-bottombar .cc-teaser{bottom:154px;}
     <div class="section-eyebrow">My Orders</div>
     <div class="section-title" style="margin-bottom:24px;">내 주문 내역</div>
     <div id="orders-list"></div>
+  </div>
+</div>
+
+<!-- ══ ADMIN DASHBOARD ═══════════════════════════════ -->
+<div class="scr" id="s-admin">
+  <div class="topbar">
+    <button class="tb-back" onclick="go('s-home')">← Back</button>
+    <div class="logo" onclick="go('s-home')" role="button" tabindex="0">VETTI</div>
+    <div class="tb-step" id="admin-count">—</div>
+  </div>
+  <div class="admin-wrap">
+    <div class="section-eyebrow">Admin · Orders</div>
+    <div class="section-title" style="margin-bottom:6px;">접수된 주문 관리</div>
+    <div class="admin-desc">장인 및 운영팀 전용. 서버에 저장된 주문의 전체 스펙과 제조 스냅샷을 확인할 수 있습니다.</div>
+
+    <div id="admin-gate" class="admin-gate">
+      <div class="admin-gate-title">관리자 인증</div>
+      <div class="admin-gate-sub">ADMIN_TOKEN을 입력해 주세요.</div>
+      <input type="password" id="admin-token-input" placeholder="admin token" autocomplete="off">
+      <button class="full-btn full-btn-black" onclick="adminLogin()">접속</button>
+      <div id="admin-err" class="admin-err"></div>
+    </div>
+
+    <div id="admin-main" style="display:none;">
+      <div class="admin-toolbar">
+        <button class="admin-btn" onclick="adminLoadOrders()">↻ 새로고침</button>
+        <button class="admin-btn admin-btn-ghost" onclick="adminLogout()">로그아웃</button>
+      </div>
+      <div id="admin-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 주문 상세 오버레이 -->
+<div class="admin-detail" id="admin-detail" style="display:none;">
+  <div class="admin-detail-inner">
+    <button class="admin-detail-close" onclick="closeAdminDetail()" aria-label="닫기">✕</button>
+    <div id="admin-detail-body"></div>
   </div>
 </div>
 
@@ -2252,6 +2399,7 @@ function go(id){
   if(id==='s-workorder') startWOGeneration();
   if(id==='s-step1') {initStep1();updatePrice();refreshCdEntry();initCustomSchematic();initCustomViewSection();}
   if(id==='s-orders') renderOrders();
+  if(id==='s-admin') initAdminScreen();
 }
 
 function renderOrders(){
@@ -2857,35 +3005,193 @@ async function setRV(n,opts){
 }
 function renderCurrentHD(){setRV(S.rv||1,{render:true});}
 
-// ── 360° 자동 회전 뷰 (3D-like 멀티 앵글 프리뷰) ────────
-let RV_AUTO_TIMER=null;
-const RV_AUTO_SEQ=[1,2,3,2]; // 정면→측면→후면→측면→loop
-function _rvAutoStep(idxRef){
-  const sketch=document.querySelector('.result-sketch');
-  if(sketch) sketch.classList.add('fading');
-  setTimeout(()=>{
-    idxRef.i=(idxRef.i+1)%RV_AUTO_SEQ.length;
-    setRV(RV_AUTO_SEQ[idxRef.i]);
-    if(sketch) sketch.classList.remove('fading');
-  },220);
+// ── Three.js 3D 자유 회전 뷰어 ────────────────────────
+let V3D=null; // {scene, camera, renderer, controls, body, mat, raf, idleTimer}
+function toggle3D(){
+  if(V3D){ exit3D(); return; }
+  enter3D();
 }
-function toggleAutoRotate(){
-  if(RV_AUTO_TIMER){ stopAutoRotate(); return; }
-  const btn=document.getElementById('rv-auto');
+function enter3D(){
+  const container=document.getElementById('result-3d');
+  const cv=document.getElementById('result-cv');
+  const img=document.getElementById('result-img');
+  const btn=document.getElementById('rv-3d');
+  const hint=document.getElementById('result-3d-hint');
+  if(!container) return;
+  if(!window.THREE || !THREE.OrbitControls){
+    toast('3D 모듈 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  // Deactivate 2D view tabs
+  ['rvt1','rvt2','rvt3'].forEach(id=>{const e=document.getElementById(id);if(e) e.classList.remove('on');});
   if(btn) btn.classList.add('on');
-  const idxRef={i:Math.max(0,RV_AUTO_SEQ.indexOf(S.rv||1))};
-  _rvAutoStep(idxRef);
-  RV_AUTO_TIMER=setInterval(()=>_rvAutoStep(idxRef),2400);
+  if(cv) cv.style.display='none';
+  if(img) img.style.display='none';
+  container.style.display='block';
+  if(hint){hint.style.display='block';setTimeout(()=>{hint.style.opacity='0';hint.style.transition='opacity .6s';},2800);}
+
+  const W=container.clientWidth||container.parentElement.clientWidth||360;
+  const H=container.clientHeight||container.parentElement.clientHeight||360;
+
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0xF5F3F0);
+
+  const camera=new THREE.PerspectiveCamera(38,W/H,0.1,100);
+  camera.position.set(0,0.15,3.2);
+
+  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setPixelRatio(window.devicePixelRatio||1);
+  renderer.setSize(W,H);
+  renderer.outputEncoding=THREE.sRGBEncoding||3001;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping||4;
+  renderer.toneMappingExposure=1.0;
+  container.innerHTML=''; container.appendChild(renderer.domElement);
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff,0.55));
+  const key=new THREE.DirectionalLight(0xffffff,0.95);key.position.set(3,4,3);scene.add(key);
+  const fill=new THREE.DirectionalLight(0xffffff,0.35);fill.position.set(-3,1,-2);scene.add(fill);
+  const rim=new THREE.DirectionalLight(0xfff2d6,0.25);rim.position.set(0,2,-4);scene.add(rim);
+
+  // Ground shadow disk (subtle)
+  const shadowGeom=new THREE.CircleGeometry(0.95,32);
+  const shadowMat=new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.12});
+  const shadow=new THREE.Mesh(shadowGeom,shadowMat);
+  shadow.rotation.x=-Math.PI/2; shadow.position.y=-0.72;
+  scene.add(shadow);
+
+  // Bag material — 선택된 컬러 + 클리어코트로 가죽 느낌
+  const col=gc();
+  const bagColor=new THREE.Color(col.r/255,col.g/255,col.b/255);
+  const material=new THREE.MeshPhysicalMaterial({
+    color:bagColor,
+    roughness:0.55,
+    metalness:0.0,
+    clearcoat:0.45,
+    clearcoatRoughness:0.22,
+    sheen:0.3,
+    sheenColor:bagColor,
+  });
+
+  // Body — 사다리꼴 프로필 extrude (앞면 넓고 위가 살짝 좁은 토트)
+  const bodyGroup=new THREE.Group();
+  const sh=new THREE.Shape();
+  const bW=0.72, tW=0.64, hH=0.48, r=0.06;
+  sh.moveTo(-bW+r,-hH);
+  sh.lineTo(bW-r,-hH);
+  sh.quadraticCurveTo(bW,-hH,bW*0.98,-hH+r);
+  sh.lineTo(tW,hH-r);
+  sh.quadraticCurveTo(tW,hH,tW-r,hH);
+  sh.lineTo(-tW+r,hH);
+  sh.quadraticCurveTo(-tW,hH,-tW,hH-r);
+  sh.lineTo(-bW*0.98,-hH+r);
+  sh.quadraticCurveTo(-bW,-hH,-bW+r,-hH);
+  const bodyGeom=new THREE.ExtrudeGeometry(sh,{depth:0.46,bevelEnabled:true,bevelThickness:0.06,bevelSize:0.05,bevelSegments:4,curveSegments:24});
+  bodyGeom.center();
+  const body=new THREE.Mesh(bodyGeom,material);
+  bodyGroup.add(body);
+
+  // Handles — 두 개의 반원 arc
+  const handleTube=new THREE.TorusGeometry(0.22,0.028,16,48,Math.PI);
+  [-0.28,0.28].forEach(x=>{
+    const h=new THREE.Mesh(handleTube,material);
+    h.position.set(x,hH+0.08,0);
+    h.rotation.set(0,0,0);
+    bodyGroup.add(h);
+  });
+  // Handle attachment tabs
+  const tabGeom=new THREE.BoxGeometry(0.06,0.12,0.025);
+  [-0.28-0.22,-0.28+0.22,0.28-0.22,0.28+0.22].forEach(x=>{
+    const t=new THREE.Mesh(tabGeom,material);
+    t.position.set(x,hH-0.02,0.01);
+    bodyGroup.add(t);
+  });
+
+  // Feet — 4개 금속 스터드
+  const hw=gh();
+  const hwColor=hw.id==='silver'?0xBCBCBC: hw.id==='rut'?0x3A3A3A : 0xC6A255;
+  const footMat=new THREE.MeshPhysicalMaterial({color:hwColor,metalness:0.85,roughness:0.28,clearcoat:0.5});
+  const footGeom=new THREE.CylinderGeometry(0.035,0.038,0.03,16);
+  [[-bW*0.78,-hH-0.03,0.18],[bW*0.78,-hH-0.03,0.18],[-bW*0.78,-hH-0.03,-0.18],[bW*0.78,-hH-0.03,-0.18]].forEach(p=>{
+    const f=new THREE.Mesh(footGeom,footMat);
+    f.position.set(p[0],p[1]-0.05,p[2]);
+    bodyGroup.add(f);
+  });
+
+  // Clasp — 앞면 중앙
+  const claspGeom=new THREE.BoxGeometry(0.08,0.04,0.015);
+  const clasp=new THREE.Mesh(claspGeom,footMat);
+  clasp.position.set(0,hH-0.07,0.24);
+  bodyGroup.add(clasp);
+
+  bodyGroup.rotation.y=-0.25; // 살짝 틀어진 초기 뷰
+  scene.add(bodyGroup);
+
+  // Controls — 드래그 회전
+  const controls=new THREE.OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true; controls.dampingFactor=0.07;
+  controls.enablePan=false;
+  controls.minDistance=2.2; controls.maxDistance=4.6;
+  controls.minPolarAngle=Math.PI*0.3;
+  controls.maxPolarAngle=Math.PI*0.72;
+  controls.autoRotate=true; controls.autoRotateSpeed=1.4;
+  controls.target.set(0,0,0);
+
+  // 드래그 시 auto-rotate 잠시 중단 후 3초 후 재개
+  let idleTimer=null;
+  const pauseAuto=()=>{
+    controls.autoRotate=false;
+    if(idleTimer) clearTimeout(idleTimer);
+    idleTimer=setTimeout(()=>{controls.autoRotate=true;},3000);
+  };
+  renderer.domElement.addEventListener('pointerdown',pauseAuto);
+  renderer.domElement.addEventListener('wheel',pauseAuto);
+
+  let running=true;
+  const animate=()=>{
+    if(!running) return;
+    V3D.raf=requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene,camera);
+  };
+
+  const onResize=()=>{
+    if(!V3D||!V3D.renderer) return;
+    const rw=container.clientWidth||360, rh=container.clientHeight||360;
+    V3D.camera.aspect=rw/rh;
+    V3D.camera.updateProjectionMatrix();
+    V3D.renderer.setSize(rw,rh);
+  };
+  window.addEventListener('resize',onResize);
+
+  V3D={scene,camera,renderer,controls,body:bodyGroup,mat:material,
+       raf:0,idleTimer,onResize,running:true};
+  animate();
 }
-function stopAutoRotate(){
-  if(!RV_AUTO_TIMER) return;
-  clearInterval(RV_AUTO_TIMER);
-  RV_AUTO_TIMER=null;
-  const btn=document.getElementById('rv-auto');
-  const sketch=document.querySelector('.result-sketch');
+function exit3D(){
+  const container=document.getElementById('result-3d');
+  const cv=document.getElementById('result-cv');
+  const img=document.getElementById('result-img');
+  const btn=document.getElementById('rv-3d');
+  const hint=document.getElementById('result-3d-hint');
   if(btn) btn.classList.remove('on');
-  if(sketch) sketch.classList.remove('fading');
+  if(container) container.style.display='none';
+  if(hint) hint.style.display='none';
+  if(!V3D) return;
+  V3D.running=false;
+  if(V3D.raf) cancelAnimationFrame(V3D.raf);
+  if(V3D.idleTimer) clearTimeout(V3D.idleTimer);
+  if(V3D.onResize) window.removeEventListener('resize',V3D.onResize);
+  try{V3D.renderer.dispose();}catch(e){}
+  try{V3D.controls.dispose();}catch(e){}
+  V3D=null;
+  // Restore 2D view
+  if(cv) cv.style.display='';
+  const curView=S.rv||1;
+  ['rvt1','rvt2','rvt3'].forEach((id,i)=>{const e=document.getElementById(id);if(e) e.classList.toggle('on',i+1===curView);});
 }
+// Legacy alias (go() still calls stopAutoRotate on screen switch)
+function stopAutoRotate(){ exit3D(); }
 
 // ── AI 렌더링 흐름 ───────────────────────────────────
 async function goAI(){
@@ -3585,6 +3891,176 @@ async function sendWO(){
   setTimeout(()=>go('s-sent'),600);
 }
 
+// ── 관리자 대시보드 ───────────────────────────────────
+const ADMIN_TOKEN_KEY='vetti_admin_token';
+function getAdminToken(){try{return sessionStorage.getItem(ADMIN_TOKEN_KEY)||'';}catch(e){return '';}}
+function setAdminTokenVal(t){try{sessionStorage.setItem(ADMIN_TOKEN_KEY,t);}catch(e){}}
+function clearAdminToken(){try{sessionStorage.removeItem(ADMIN_TOKEN_KEY);}catch(e){}}
+function initAdminScreen(){
+  const token=getAdminToken();
+  if(token){
+    document.getElementById('admin-gate').style.display='none';
+    document.getElementById('admin-main').style.display='block';
+    adminLoadOrders();
+  } else {
+    document.getElementById('admin-gate').style.display='block';
+    document.getElementById('admin-main').style.display='none';
+    setTimeout(()=>{const i=document.getElementById('admin-token-input');if(i) i.focus();},100);
+  }
+}
+function adminLogin(){
+  const input=document.getElementById('admin-token-input');
+  const err=document.getElementById('admin-err');
+  const token=(input.value||'').trim();
+  if(!token){if(err) err.textContent='토큰을 입력해 주세요';return;}
+  if(err) err.textContent='';
+  setAdminTokenVal(token);
+  initAdminScreen();
+}
+function adminLogout(){
+  clearAdminToken();
+  initAdminScreen();
+}
+async function adminLoadOrders(){
+  const listEl=document.getElementById('admin-list');
+  if(!listEl) return;
+  listEl.innerHTML=`<div class="admin-empty">불러오는 중…</div>`;
+  try{
+    const r=await fetch(API_BASE+'/api/admin/list',{
+      headers:{'X-Admin-Token':getAdminToken()},
+    });
+    if(r.status===401){
+      clearAdminToken();
+      toast('인증 실패. 다시 로그인해 주세요.');
+      initAdminScreen();
+      return;
+    }
+    if(!r.ok){
+      const t=await r.text();
+      listEl.innerHTML=`<div class="admin-empty">불러오기 실패 (${r.status})<br><span style="font-size:10px;">${ccEscape(t.slice(0,200))}</span></div>`;
+      return;
+    }
+    const d=await r.json();
+    const orders=d.orders||[];
+    const cntEl=document.getElementById('admin-count');
+    if(cntEl) cntEl.textContent=orders.length+' 건';
+    if(!orders.length){
+      listEl.innerHTML=`<div class="admin-empty">접수된 주문이 없습니다</div>`;
+      return;
+    }
+    listEl.innerHTML=orders.map((o,i)=>{
+      const dt=o.createdAt?new Date(o.createdAt).toLocaleString('ko-KR'):'—';
+      const isCustom=!!o.spec?.customDesign;
+      const cust=o.customer||{};
+      const sp=o.spec||{};
+      return `<div class="admin-order" onclick="showAdminDetail(${i})">
+        <div class="admin-order-head">
+          <div>
+            <div class="admin-order-num">${ccEscape(o.woNum||'—')}</div>
+            <div class="admin-order-date">${dt}</div>
+          </div>
+          ${isCustom?`<span class="admin-order-tag CUSTOM">CUSTOM</span>`:`<span class="admin-order-tag">RENÉE</span>`}
+        </div>
+        <div class="admin-order-grid">
+          <div class="admin-order-cell"><span>소재</span><b>${ccEscape(sp.material||'')}</b></div>
+          <div class="admin-order-cell"><span>컬러</span><b>${ccEscape(sp.colourKo||sp.colour||'')}</b></div>
+          <div class="admin-order-cell"><span>사이즈</span><b>${ccEscape(sp.size||'')}</b></div>
+          <div class="admin-order-cell"><span>HW</span><b>${ccEscape(sp.hardware||'')}</b></div>
+        </div>
+        <div class="admin-order-foot">
+          <div class="admin-order-cust">${ccEscape(cust.name||'—')} · ${ccEscape(cust.phone||'')}</div>
+          <div class="admin-order-total">${fmt(o.total||0)}</div>
+        </div>
+      </div>`;
+    }).join('');
+    // Cache for detail
+    window._ADMIN_ORDERS=orders;
+  }catch(e){
+    listEl.innerHTML=`<div class="admin-empty">네트워크 오류<br><span style="font-size:10px;">${ccEscape(e.message||'')}</span></div>`;
+  }
+}
+function showAdminDetail(idx){
+  const orders=window._ADMIN_ORDERS||[];
+  const o=orders[idx];
+  if(!o) return;
+  const cust=o.customer||{};
+  const sp=o.spec||{};
+  const craft=o.craft||{};
+  const mat=craft.material||{};
+  const col=craft.colour||{};
+  const sz=craft.size||{};
+  const hw=craft.hardware||{};
+  const procs=(craft.processes||[]).filter(p=>p.w);
+  const qcs=craft.qcCriteria||[];
+  const refs=sp.customRefs||{};
+
+  const body=document.getElementById('admin-detail-body');
+  body.innerHTML=`
+    <div class="ad-sec">
+      <div class="ad-sec-title">Order</div>
+      <div class="ad-row"><span>WO</span><b>${ccEscape(o.woNum||'—')}</b></div>
+      <div class="ad-row"><span>접수 시각</span><b>${o.createdAt?new Date(o.createdAt).toLocaleString('ko-KR'):'—'}</b></div>
+      <div class="ad-row"><span>모델</span><b>${sp.customDesign?'CUSTOM':'RENÉE'}</b></div>
+      <div class="ad-row"><span>총액</span><b>${fmt(o.total||0)}</b></div>
+      <div class="ad-row"><span>리드타임</span><b>${ccEscape(o.leadTime||'4 weeks')}</b></div>
+      <div class="ad-row"><span>크래프트 버전</span><b>v${ccEscape(craft.version||'—')}</b></div>
+    </div>
+
+    <div class="ad-sec">
+      <div class="ad-sec-title">Customer</div>
+      <div class="ad-row"><span>이름</span><b>${ccEscape(cust.name||'—')}</b></div>
+      <div class="ad-row"><span>연락처</span><b>${ccEscape(cust.phone||'—')}</b></div>
+      <div class="ad-row"><span>이메일</span><b>${ccEscape(cust.email||'—')}</b></div>
+      <div class="ad-row"><span>배송지</span><b>${ccEscape(cust.addr||'—')}</b></div>
+      ${cust.note?`<div class="ad-note">요청사항: ${ccEscape(cust.note)}</div>`:''}
+      <div class="ad-row"><span>개인정보 동의</span><b>${o.consent?.pipa?'✓ 동의 ('+new Date(o.consent.consentedAt).toLocaleString('ko-KR')+')':'—'}</b></div>
+    </div>
+
+    <div class="ad-sec">
+      <div class="ad-sec-title">Material Spec</div>
+      <div class="ad-row"><span>소재</span><b>${ccEscape(mat.name||'')} (${ccEscape(mat.nameEn||'')})</b></div>
+      <div class="ad-row"><span>원산지</span><b>${ccEscape(mat.origin||'—')}</b></div>
+      <div class="ad-row"><span>등급·두께</span><b>${ccEscape(mat.grade||'—')} · ${ccEscape(mat.thickness||'—')}</b></div>
+      <div class="ad-row"><span>태닝</span><b>${ccEscape(mat.tannage||'—')}</b></div>
+      <div class="ad-row"><span>안감</span><b>${ccEscape(mat.lining||'—')}</b></div>
+      <div class="ad-row"><span>컬러</span><b>${ccEscape(col.name||'—')} · ${ccEscape(col.ko||'')} · RGB(${col.rgb?.r||0},${col.rgb?.g||0},${col.rgb?.b||0})</b></div>
+      <div class="ad-row"><span>하드웨어</span><b>${ccEscape(hw.name||'—')}</b></div>
+      <div class="ad-row"><span>치수</span><b>W${sz.widthMm||'—'}×H${sz.heightMm||'—'}×D${sz.depthMm||'—'}mm</b></div>
+      <div class="ad-row"><span>핸들·스트랩</span><b>${sz.handleLengthMm||'—'}mm · ${ccEscape(sz.strapLengthMm||'—')}mm</b></div>
+      ${sp.monogram?`<div class="ad-row"><span>모노그램</span><b>${ccEscape(sp.monogram)}</b></div>`:''}
+    </div>
+
+    ${sp.customDesign?`
+      <div class="ad-sec">
+        <div class="ad-sec-title">Custom Design References</div>
+        ${refs.front?`<div class="ad-row"><span>FRONT 도식화</span><b><a href="${refs.front}" target="_blank" rel="noopener" style="color:#4a6aff;font-size:11px;">열기 ↗</a></b></div>`:''}
+        ${refs.side?`<div class="ad-row"><span>SIDE 도식화</span><b><a href="${refs.side}" target="_blank" rel="noopener" style="color:#4a6aff;font-size:11px;">열기 ↗</a></b></div>`:`<div class="ad-row"><span>SIDE</span><b>표준 구조 적용</b></div>`}
+        ${refs.back?`<div class="ad-row"><span>BACK 도식화</span><b><a href="${refs.back}" target="_blank" rel="noopener" style="color:#4a6aff;font-size:11px;">열기 ↗</a></b></div>`:`<div class="ad-row"><span>BACK</span><b>표준 구조 적용</b></div>`}
+      </div>
+    `:''}
+
+    ${procs.length?`
+      <div class="ad-sec">
+        <div class="ad-sec-title">Key Processes (${procs.length})</div>
+        ${procs.map((p,i)=>`<div class="ad-proc-item"><b>${String(i+1).padStart(2,'0')} · ${ccEscape(p.n)}</b><em>${ccEscape(p.d)} · 소요 ${ccEscape(p.t)}</em></div>`).join('')}
+      </div>
+    `:''}
+
+    ${qcs.length?`
+      <div class="ad-sec">
+        <div class="ad-sec-title">QC Criteria</div>
+        ${qcs.map(q=>`<div class="ad-proc-item"><b>${ccEscape(q.c)} · ${ccEscape(q.t)}</b><em>${ccEscape(q.b)} · <span style="color:${q.lv==='CRITICAL'?'#8B0000':q.lv==='HIGH'?'#7A1D35':'#777'};font-weight:700;">${q.lv}</span></em></div>`).join('')}
+      </div>
+    `:''}
+
+    ${o.blobUrl?`<a href="${o.blobUrl}" target="_blank" rel="noopener" class="ad-json-btn" style="text-decoration:none;text-align:center;">전체 JSON 원본 열기 ↗</a>`:''}
+  `;
+  document.getElementById('admin-detail').style.display='flex';
+}
+function closeAdminDetail(){
+  document.getElementById('admin-detail').style.display='none';
+}
+
 function copyWO(){
   const el=document.getElementById('sent-wo-num');
   const txt=el?el.textContent.trim():'';
@@ -4070,7 +4546,13 @@ function obDismiss(){
 // ── 초기화 ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',async()=>{
   await Promise.all(['croc','lizard','ostrich'].flatMap(m=>[1,2,3].map(v=>loadImg(m,v))));
-  // 홈 캔버스 없음 (에디토리얼 이미지 사용)
+  // URL 해시로 어드민 진입 (#admin)
+  if(location.hash==='#admin'){go('s-admin');}
+});
+window.addEventListener('hashchange',()=>{
+  if(location.hash==='#admin' && !document.getElementById('s-admin').classList.contains('on')){
+    go('s-admin');
+  }
 });
 </script>
 <!-- ══ CUSTOM SCHEMATIC LOADING (전체화면) ═════════════ -->
